@@ -1,0 +1,38 @@
+From c1c6a222ecfb9c8ffa4ad218c7131f0cc19519e0 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Fri, 7 Feb 2020 09:11:29 -0800
+Subject: [PATCH] BuildBreak: UWP apps can't call GetModuleHandle
+
+It is not possible to load RtlCaptureStackBackTrace at static init time in UWP.
+CaptureStackBackTrace is the public version of RtlCaptureStackBackTrace.
+---
+ .../absl/debugging/internal/stacktrace_win32-inl.inc      | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc b/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc
+index b46491f8143..0ff3b05e344 100644
+--- a/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc
++++ b/abseil-cpp/absl/debugging/internal/stacktrace_win32-inl.inc
+@@ -46,11 +46,19 @@ typedef USHORT NTAPI RtlCaptureStackBackTrace_Function(
+     OUT PVOID *backtrace,
+     OUT PULONG backtrace_hash);
+ 
++// It is not possible to load RtlCaptureStackBackTrace at static init time in
++// UWP. CaptureStackBackTrace is the public version of RtlCaptureStackBackTrace
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
++    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++static RtlCaptureStackBackTrace_Function* const RtlCaptureStackBackTrace_fn =
++    &::CaptureStackBackTrace;
++#else
+ // Load the function we need at static init time, where we don't have
+ // to worry about someone else holding the loader's lock.
+ static RtlCaptureStackBackTrace_Function* const RtlCaptureStackBackTrace_fn =
+    (RtlCaptureStackBackTrace_Function*)
+    GetProcAddress(GetModuleHandleA("ntdll.dll"), "RtlCaptureStackBackTrace");
++#endif // WINAPI_PARTITION_APP && !WINAPI_PARTITION_DESKTOP
+ 
+ template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
+ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
+-- 
+2.24.1.windows.2
+

@@ -1,0 +1,61 @@
+From c78339d0e4d676451065407acd8e007b92c8d5a8 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Fri, 7 Feb 2020 09:23:10 -0800
+Subject: [PATCH] Use BCryptGenRandom when building as Windows UWP app.
+
+RtlGenRandom is a legacy API that might be altered and is unavailable
+for UWP apps. BCryptGenRandom is the recommended API for generating
+random numbers on UWP.
+
+This change causes BCryptGenRandom to be used for UWP apps and
+RtlGenRandom to be used on non-UWP apps (i.e. desktop apps). For non-UWP
+configurations, RtlGenRandom is used instead of BCryptGenRandom to avoid
+accessing resources that may be unavailable inside the Chromium sandbox.
+---
+ crypto/rand_extra/windows.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/crypto/rand_extra/windows.c b/crypto/rand_extra/windows.c
+index c9555874e..82d5542bf 100644
+--- a/crypto/rand_extra/windows.c
++++ b/crypto/rand_extra/windows.c
+@@ -23,12 +23,18 @@ OPENSSL_MSVC_PRAGMA(warning(push, 3))
+ 
+ #include <windows.h>
+ 
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
++    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++#include <bcrypt.h>
++OPENSSL_MSVC_PRAGMA(comment(lib, "bcrypt.lib"))
++#else
+ // #define needed to link in RtlGenRandom(), a.k.a. SystemFunction036.  See the
+ // "Community Additions" comment on MSDN here:
+ // http://msdn.microsoft.com/en-us/library/windows/desktop/aa387694.aspx
+ #define SystemFunction036 NTAPI SystemFunction036
+ #include <ntsecapi.h>
+ #undef SystemFunction036
++#endif  // WINAPI_PARTITION_APP && !WINAPI_PARTITION_DESKTOP
+ 
+ OPENSSL_MSVC_PRAGMA(warning(pop))
+ 
+@@ -41,7 +47,17 @@ void CRYPTO_sysrand(uint8_t *out, size_t requested) {
+     if (requested < output_bytes_this_pass) {
+       output_bytes_this_pass = (ULONG)requested;
+     }
++    // On non-UWP configurations, use RtlGenRandom instead of BCryptGenRandom
++    // to avoid accessing resources that may be unavailable inside the
++    // Chromium sandbox. See https://crbug.com/boringssl/307
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
++    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++    if (!BCRYPT_SUCCESS(BCryptGenRandom(
++            /*hAlgorithm=*/NULL, out, output_bytes_this_pass,
++            BCRYPT_USE_SYSTEM_PREFERRED_RNG))) {
++#else
+     if (RtlGenRandom(out, output_bytes_this_pass) == FALSE) {
++#endif  // WINAPI_PARTITION_APP && !WINAPI_PARTITION_DESKTOP
+       abort();
+     }
+     requested -= output_bytes_this_pass;
+-- 
+2.24.1.windows.2
+

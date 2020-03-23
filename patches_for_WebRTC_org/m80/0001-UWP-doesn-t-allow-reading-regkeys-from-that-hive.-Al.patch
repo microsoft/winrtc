@@ -1,0 +1,40 @@
+From dc01609f024b81be5f387cee49cb471450368212 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Fri, 7 Feb 2020 09:03:20 -0800
+Subject: [PATCH] UWP doesn't allow reading regkeys.
+
+Unfortunately, UWP also doesn't offer an API for returning nominal processor frequency at this moment. Other options would require apps depending on abseil-cpp to be packaged with extra manifest data or libraries for bridging platforms.
+
+This change pushes the unsupported APIs accessing the registry behind a define guard. This define guard makes GetNominalCPUFrequency to compile and run as usual on desktop, but it will return the value 1.0 on UWP Apps (Store).
+---
+ abseil-cpp/absl/base/internal/sysinfo.cc | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/abseil-cpp/absl/base/internal/sysinfo.cc b/abseil-cpp/absl/base/internal/sysinfo.cc
+index e5e131f71d3..a1c8de5b261 100644
+--- a/abseil-cpp/absl/base/internal/sysinfo.cc
++++ b/abseil-cpp/absl/base/internal/sysinfo.cc
+@@ -76,6 +76,12 @@ static int GetNumCPUs() {
+ #if defined(_WIN32)
+ 
+ static double GetNominalCPUFrequency() {
++// UWP apps don't have access to the registry and currently don't provide an
++// API informing about CPU nominal frequency.
++#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
++    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
++  return 1.0;
++#else
+   DWORD data;
+   DWORD data_size = sizeof(data);
+   #pragma comment(lib, "shlwapi.lib")  // For SHGetValue().
+@@ -86,6 +92,7 @@ static double GetNominalCPUFrequency() {
+     return data * 1e6;  // Value is MHz.
+   }
+   return 1.0;
++#endif  // WINAPI_PARTITION_APP && !WINAPI_PARTITION_DESKTOP
+ }
+ 
+ #elif defined(CTL_HW) && defined(HW_CPU_FREQ)
+-- 
+2.24.1.windows.2
+
