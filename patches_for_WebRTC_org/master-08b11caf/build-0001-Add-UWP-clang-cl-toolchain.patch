@@ -1,0 +1,77 @@
+From 148429c60145f2f82779955247ae2a29e7fb2882 Mon Sep 17 00:00:00 2001
+From: Filippo Banno <fiban@microsoft.com>
+Date: Tue, 18 Feb 2020 18:25:19 +0000
+Subject: [PATCH] Add UWP clang-cl toolchain
+
+Mostly copied from win clang-cl toolchain
+---
+ config/BUILDCONFIG.gn            |  6 +++++-
+ toolchain/win/BUILD.gn           | 20 ++++++++++++++++++++
+ toolchain/win/setup_toolchain.py |  5 ++++-
+ 3 files changed, 29 insertions(+), 2 deletions(-)
+
+diff --git a/config/BUILDCONFIG.gn b/config/BUILDCONFIG.gn
+index f89e7e831..78090562c 100644
+--- a/config/BUILDCONFIG.gn
++++ b/config/BUILDCONFIG.gn
+@@ -251,7 +251,11 @@ if (target_os == "android") {
+   # x86, x64 and arm are supported target CPUs.
+   assert(target_cpu == "x86" || target_cpu == "x64" || target_cpu == "arm" ||
+          target_cpu == "arm64")
+-  _default_toolchain = "//build/toolchain/win:uwp_$target_cpu"
++  if (is_clang) {
++    _default_toolchain = "//build/toolchain/win:uwp_clang_$target_cpu"
++  } else {
++    _default_toolchain = "//build/toolchain/win:uwp_$target_cpu"
++  }
+ } else if (target_os == "aix") {
+   _default_toolchain = "//build/toolchain/aix:$target_cpu"
+ } else {
+diff --git a/toolchain/win/BUILD.gn b/toolchain/win/BUILD.gn
+index 5dcff8f8d..8a609fd5d 100644
+--- a/toolchain/win/BUILD.gn
++++ b/toolchain/win/BUILD.gn
+@@ -482,4 +482,24 @@ if (target_os == "winuwp") {
+       is_clang = false
+     }
+   }
++
++  # UWP clang-cl toolchain. Similar to plain win clang-cl toolchain, sets
++  # environment and current_os differently.
++  msvc_toolchain("uwp_clang_" + target_cpu) {
++    environment = "environment.store_" + target_cpu
++    prefix = rebase_path("$clang_base_path/bin", root_build_dir)
++    cl = "${clang_prefix}$prefix/${clang_cl}"
++    if (host_os == "win") {
++      # Flip the slashes so that copy/paste of the command works.
++      cl = string_replace(cl, "/", "\\")
++    }
++    sys_include_flags = "${store_cpu_toolchain_data.include_flags_imsvc}"
++    sys_lib_flags = "${store_cpu_toolchain_data.libpath_flags}"
++
++    toolchain_args = {
++      is_clang = true
++      current_os = "winuwp"
++      current_cpu = target_cpu
++    }
++  }
+ }
+diff --git a/toolchain/win/setup_toolchain.py b/toolchain/win/setup_toolchain.py
+index fa31688f3..cff095c48 100644
+--- a/toolchain/win/setup_toolchain.py
++++ b/toolchain/win/setup_toolchain.py
+@@ -260,7 +260,10 @@ def main():
+       except ValueError:
+         pass
+ 
+-      def q(s):  # Quote s if it contains spaces or other weird characters.
++      def q(s):
++        # Remove trailing backslash or it will escape the trailing quote
++        s = s if s[-1] != '\\' else s[:-1]
++        # Quote s if it contains spaces or other weird characters.
+         return s if re.match(r'^[a-zA-Z0-9._/\\:-]*$', s) else '"' + s + '"'
+       include_I = ' '.join([q('/I' + i) for i in include])
+       include_imsvc = ' '.join([q('-imsvc' + i) for i in include])
+-- 
+2.25.1.windows.1
+

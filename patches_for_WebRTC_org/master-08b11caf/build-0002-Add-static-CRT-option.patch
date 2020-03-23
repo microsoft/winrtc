@@ -1,0 +1,36 @@
+From 0f68a173b4d0b58a3bdba4655faf0e65a92c69bc Mon Sep 17 00:00:00 2001
+From: Filippo Banno <fiban@microsoft.com>
+Date: Mon, 24 Feb 2020 14:51:40 +0000
+Subject: [PATCH 2/3] Add static CRT option
+
+---
+ config/win/BUILD.gn | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index 37a710e30..8865df47d 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -39,6 +39,10 @@ declare_args() {
+   #  and with this switch, clang emits it like this:
+   #    foo/bar.cc:12:34: error: something went wrong
+   use_clang_diagnostics_format = false
++
++  # Use static CRT /MD(d) on Windows builds. Defaults to false, but is needed
++  # as UWP doesn't support static CRT, only dynamic one.
++  use_static_crt = false
+ }
+ 
+ # This is included by reference in the //build/config/compiler config that
+@@ -455,7 +459,7 @@ config("default_crt") {
+     # exceptions on.
+     configs = [ ":dynamic_crt" ]
+   } else {
+-    if (current_os == "winuwp") {
++    if (!use_static_crt || current_os == "winuwp") {
+       # https://blogs.msdn.microsoft.com/vcblog/2014/06/10/the-great-c-runtime-crt-refactoring/
+       # contains a details explanation of what is happening with the Windows
+       # CRT in Visual Studio releases related to Windows store applications.
+-- 
+2.25.1.windows.1
+

@@ -1,0 +1,1576 @@
+From 962d836bcad6b7f5433c8267e900fe490785d756 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Fri, 17 Jan 2020 16:57:46 -0800
+Subject: [PATCH] Video Capture using WinRT's Windows::Media APIs
+
+This CL adds a new video capture module using WinRT's Windows::Media APIs. The legacy video capture module using DirectShow continues existing as default implementation because of the Windows 7 support (https://cloud.google.com/blog/products/chrome-enterprise/how-chrome-is-helping-enterprises-still-using-windows-7). DirectShow is a legacy Windows API that is no longer supported. Besides that, modern Windows Apps can't consume DirectShow APIs.
+This new video capture module can be used by Desktop apps and Modern Windows Apps (UWP) as drop-in replacement for the DShow video capture module on platforms supporting WinRT APIs.
+The design for this new module follows the same patterns used by the DirectShow video capture module.
+
+Here are some design decisions:
+1. To keep compatibility with current consumers of VideoCaptureFactory, GPU accelerated capabilities were not used by this CL. This might be addressed in a future CL.
+2. To have minimal impact on build times, WinRT headers do not mix up with WebRTC headers.
+3. Only color cameras are enumerated.
+
+Noticeable differences are:
+1. UWPs don't have the capabilities needed to create an experience like what DisplayCaptureSettingsDialogBox offers on desktop apps. Following the Linux video capture module, calling DisplayCaptureSettingsDialogBox returns an error.
+2. Camera enumeration do not filter out Video for Windows drivers or "Google Camera Adapter".
+3. Some older cameras with custom camera drivers will not register under the KSCATEGORY_VIDEO_CAMERA. So, it's possible to get more cameras via the DShow enumeration than the DeviceInformation enumeration. Similarly, some cameras which cannot work through the DShow code path (such as network cameras, custom media source cameras), will not register under the old DShow category.
+
+Bug: webrtc:11304
+Change-Id: If44c60b6d416d1ef547a09cf94d80619a786d9b4
+---
+ modules/video_capture/BUILD.gn                |  54 +-
+ .../windows/device_info_winrt.cc              | 487 ++++++++++++++++
+ .../video_capture/windows/device_info_winrt.h |  58 ++
+ .../windows/help_functions_winrt.cc           | 125 ++++
+ .../windows/help_functions_winrt.h            | 108 ++++
+ .../windows/video_capture_factory_windows.cc  |  19 +-
+ .../windows/video_capture_winrt.cc            | 537 ++++++++++++++++++
+ .../windows/video_capture_winrt.h             |  48 ++
+ webrtc.gni                                    |   9 +
+ 9 files changed, 1423 insertions(+), 22 deletions(-)
+ create mode 100644 modules/video_capture/windows/device_info_winrt.cc
+ create mode 100644 modules/video_capture/windows/device_info_winrt.h
+ create mode 100644 modules/video_capture/windows/help_functions_winrt.cc
+ create mode 100644 modules/video_capture/windows/help_functions_winrt.h
+ create mode 100644 modules/video_capture/windows/video_capture_winrt.cc
+ create mode 100644 modules/video_capture/windows/video_capture_winrt.h
+
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index c3b50ef781..61b19993e0 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -64,28 +64,42 @@ if (!build_with_chromium) {
+       deps += [ "../../media:rtc_media_base" ]
+     }
+     if (is_win) {
+-      sources = [
+-        "windows/device_info_ds.cc",
+-        "windows/device_info_ds.h",
+-        "windows/help_functions_ds.cc",
+-        "windows/help_functions_ds.h",
+-        "windows/sink_filter_ds.cc",
+-        "windows/sink_filter_ds.h",
+-        "windows/video_capture_ds.cc",
+-        "windows/video_capture_ds.h",
+-        "windows/video_capture_factory_windows.cc",
+-      ]
+-
+-      libs = [ "strmiids.lib" ]
+-
+-      if (build_with_mozilla) {
+-        sources += [
+-          "windows/BaseFilter.cpp",
+-          "windows/BaseInputPin.cpp",
+-          "windows/BasePin.cpp",
+-          "windows/MediaType.cpp",
++      if (rtc_win_video_capture_winrt) {
++        defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
++        sources = [
++          "windows/device_info_winrt.cc",
++          "windows/device_info_winrt.h",
++          "windows/help_functions_winrt.cc",
++          "windows/help_functions_winrt.h",
++          "windows/video_capture_winrt.cc",
++          "windows/video_capture_winrt.h",
++        ]
++        libs = [ "windowsapp.lib" ]
++      } else {
++        defines = [ "WEBRTC_VIDEO_CAPTURE_DSHOW" ]
++        sources = [
++          "windows/device_info_ds.cc",
++          "windows/device_info_ds.h",
++          "windows/help_functions_ds.cc",
++          "windows/help_functions_ds.h",
++          "windows/sink_filter_ds.cc",
++          "windows/sink_filter_ds.h",
++          "windows/video_capture_ds.cc",
++          "windows/video_capture_ds.h",
+         ]
++        libs = [ "strmiids.lib" ]
++        if (build_with_mozilla) {
++          sources += [
++            "windows/BaseFilter.cpp",
++            "windows/BaseInputPin.cpp",
++            "windows/BasePin.cpp",
++            "windows/MediaType.cpp",
++          ]
++        }
+       }
++      sources += [
++        "windows/video_capture_factory_windows.cc",
++      ]
+     }
+ 
+     if (build_with_mozilla && is_android) {
+diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
+new file mode 100644
+index 0000000000..5e330ba1af
+--- /dev/null
++++ b/modules/video_capture/windows/device_info_winrt.cc
+@@ -0,0 +1,487 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#include "modules/video_capture/windows/device_info_winrt.h"
++
++#include <Windows.Devices.Enumeration.h>
++#include <Windows.Foundation.Collections.h>
++#include <windows.foundation.h>
++#include <wrl/client.h>
++#include <wrl/event.h>
++#include <wrl/implements.h>
++#include <wrl/wrappers/corewrappers.h>
++
++#include <memory>
++#include <vector>
++
++#include "modules/video_capture/video_capture_config.h"
++#include "modules/video_capture/windows/help_functions_winrt.h"
++#include "rtc_base/logging.h"
++#include "rtc_base/string_utils.h"
++
++using ABI::Windows::Devices::Enumeration::DeviceClass;
++using ABI::Windows::Devices::Enumeration::DeviceClass_VideoCapture;
++using ABI::Windows::Devices::Enumeration::DeviceInformation;
++using ABI::Windows::Devices::Enumeration::DeviceInformationCollection;
++using ABI::Windows::Devices::Enumeration::IDeviceInformation;
++using ABI::Windows::Devices::Enumeration::IDeviceInformationStatics;
++using ABI::Windows::Foundation::ActivateInstance;
++using ABI::Windows::Foundation::GetActivationFactory;
++using ABI::Windows::Foundation::IAsyncAction;
++using ABI::Windows::Foundation::IAsyncOperation;
++using ABI::Windows::Foundation::IClosable;
++using ABI::Windows::Foundation::Collections::IVectorView;
++using ABI::Windows::Media::Capture::IMediaCapture;
++using ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings;
++using ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings5;
++using ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
++using ABI::Windows::Media::Capture::MediaStreamType;
++using ABI::Windows::Media::Capture::StreamingCaptureMode;
++using ABI::Windows::Media::Devices::IMediaDeviceController;
++using ABI::Windows::Media::Devices::IVideoDeviceController;
++using ABI::Windows::Media::MediaProperties::IMediaEncodingProperties;
++using ABI::Windows::Media::MediaProperties::IMediaRatio;
++using ABI::Windows::Media::MediaProperties::IVideoEncodingProperties;
++using Microsoft::WRL::ComPtr;
++using Microsoft::WRL::Wrappers::HString;
++using Microsoft::WRL::Wrappers::HStringReference;
++using Microsoft::WRL::Wrappers::RoInitializeWrapper;
++using std::vector;
++
++namespace webrtc {
++namespace videocapturemodule {
++
++///////////////////////////////////////////////////////////////////////////////
++//
++// DeviceInfoWinRTInternal
++//
++///////////////////////////////////////////////////////////////////////////////
++struct DeviceInfoWinRTInternal {
++  DeviceInfoWinRTInternal();
++
++  ~DeviceInfoWinRTInternal() = default;
++
++  HRESULT Init();
++
++  HRESULT GetNumberOfDevices(uint32_t* device_count);
++
++  HRESULT GetDeviceName(uint32_t device_number,
++                        char* device_name_UTF8,
++                        uint32_t device_name_length,
++                        char* device_unique_id_UTF8,
++                        uint32_t device_unique_id_UTF8_length,
++                        char* product_unique_id_UTF8,
++                        uint32_t product_unique_id_UTF8_length);
++
++  HRESULT CreateCapabilityMap(
++      const wchar_t* device_unique_id,
++      vector<VideoCaptureCapability>* video_capture_capabilities);
++
++ private:
++  HRESULT AssureInitialized();
++
++  HRESULT GetDeviceInformationCollection(
++      IVectorView<DeviceInformation*>** device_collection);
++
++  RoInitializeWrapper ro_initialize_wrapper_;
++  ComPtr<IDeviceInformationStatics> device_info_statics_;
++};
++
++DeviceInfoWinRTInternal::DeviceInfoWinRTInternal()
++    : ro_initialize_wrapper_(RO_INIT_MULTITHREADED) {}
++
++HRESULT DeviceInfoWinRTInternal::Init() {
++  HRESULT hr;
++
++  // Checks if Windows runtime initialized successfully.
++  // Pay attention if ro_initialize_wrapper_ is returning RPC_E_CHANGED_MODE.
++  // It means device_info_winrt is being called from an apartment thread (STA)
++  // instead of multithreaded (MTA). Usually this means device_info_winrt is
++  // being called from the UI thread.
++  THR((HRESULT)ro_initialize_wrapper_);
++
++  // Get the object containing the DeviceInformation static methods.
++  THR(GetActivationFactory(
++      HStringReference(
++          RuntimeClass_Windows_Devices_Enumeration_DeviceInformation)
++          .Get(),
++      &device_info_statics_));
++
++Cleanup:
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::AssureInitialized() {
++  HRESULT hr = S_OK;
++
++  // Some sample apps don't call DeviceInfoImpl::Init before using the class.
++  // All public methods of this class should assure its initialization.
++  if (FAILED(ro_initialize_wrapper_) || !device_info_statics_.Get()) {
++    RTC_LOG(LS_INFO) << "DeviceInfoWinRT wasn't initialized. Initializing.";
++    THR(Init());
++  }
++
++Cleanup:
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::GetDeviceInformationCollection(
++    IVectorView<DeviceInformation*>** device_collection) {
++  HRESULT hr;
++  ComPtr<IAsyncOperation<DeviceInformationCollection*>>
++      async_op_device_info_collection;
++
++  // Call FindAllAsync and then start the async operation.
++  THR(device_info_statics_->FindAllAsyncDeviceClass(
++      DeviceClass_VideoCapture, &async_op_device_info_collection));
++
++  // Block and suspend thread until the async operation finishes or timeouts.
++  THR(WaitForAsyncOperation(async_op_device_info_collection));
++
++  // Returns device collection if async operation completed successfully.
++  THR(async_op_device_info_collection->GetResults(device_collection));
++
++Cleanup:
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::GetNumberOfDevices(uint32_t* device_count) {
++  HRESULT hr;
++  ComPtr<IVectorView<DeviceInformation*>> device_info_collection;
++
++  // Assures class has been properly initialized.
++  THR(AssureInitialized());
++
++  THR(GetDeviceInformationCollection(
++      device_info_collection.ReleaseAndGetAddressOf()));
++  THR(device_info_collection->get_Size(device_count));
++
++Cleanup:
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::GetDeviceName(
++    uint32_t device_number,
++    char* device_name_UTF8,
++    uint32_t device_name_length,
++    char* device_unique_id_UTF8,
++    uint32_t device_unique_id_UTF8_length,
++    char* product_unique_id_UTF8,
++    uint32_t product_unique_id_UTF8_length) {
++  HRESULT hr;
++  uint32_t device_count;
++  ComPtr<IVectorView<DeviceInformation*>> device_info_collection;
++  ComPtr<IDeviceInformation> device_info;
++
++  // Assures class has been properly initialized.
++  THR(AssureInitialized());
++
++  // Gets the device information collection synchronously
++  THR(GetDeviceInformationCollection(
++      device_info_collection.ReleaseAndGetAddressOf()));
++
++  // Checks if desired device index is within the collection
++  THR(device_info_collection->get_Size(&device_count));
++  if (device_number >= device_count) {
++    RTC_LOG(LS_INFO) << "Device number is out of bounds";
++    THR(E_BOUNDS);
++  }
++
++  THR(device_info_collection->GetAt(device_number, &device_info));
++
++  if (device_name_length > 0) {
++    HString video_capture_name;
++    THR(device_info->get_Name(video_capture_name.ReleaseAndGetAddressOf()));
++
++    // rtc::ToUtf8 does not check for errors
++    if (::WideCharToMultiByte(CP_UTF8, 0,
++                              video_capture_name.GetRawBuffer(nullptr), -1,
++                              reinterpret_cast<char*>(device_name_UTF8),
++                              device_name_length, NULL, NULL) == 0) {
++      RTC_LOG(LS_INFO) << "Failed to convert device name to UTF8, error = "
++                       << GetLastError();
++      THR(E_FAIL);
++    }
++  }
++
++  if (device_unique_id_UTF8_length > 0) {
++    HString video_capture_id;
++    THR(device_info->get_Id(video_capture_id.ReleaseAndGetAddressOf()));
++
++    // rtc::ToUtf8 does not check for errors
++    if (::WideCharToMultiByte(CP_UTF8, 0,
++                              video_capture_id.GetRawBuffer(nullptr), -1,
++                              reinterpret_cast<char*>(device_unique_id_UTF8),
++                              device_unique_id_UTF8_length, NULL, NULL) == 0) {
++      RTC_LOG(LS_INFO) << "Failed to convert device id to UTF8, error = "
++                       << GetLastError();
++      THR(E_FAIL);
++    }
++  }
++
++  if (product_unique_id_UTF8_length > 0) {
++    HString video_capture_id_hs;
++    unsigned int hs_lenght;
++    const wchar_t* video_capture_id_wc;
++    std::unique_ptr<wchar_t[]> buffer;
++    wchar_t *token, *next_token;
++
++    THR(device_info->get_Id(video_capture_id_hs.ReleaseAndGetAddressOf()));
++    video_capture_id_wc = video_capture_id_hs.GetRawBuffer(&hs_lenght);
++    THR(video_capture_id_wc ? S_OK : E_FAIL);
++
++    // hs_lenght doesn't count \0 needed by wcscpy_s.
++    ++hs_lenght;
++
++    // The contents of the HString has to be copied to buffer because wcstok_s
++    // is destructive operation.
++    buffer = std::make_unique<wchar_t[]>(hs_lenght);
++    THR(buffer ? S_OK : E_OUTOFMEMORY);
++    THR(0 == wcscpy_s(buffer.get(), hs_lenght, video_capture_id_wc) ? S_OK
++                                                                    : E_FAIL);
++
++    token = wcstok_s(buffer.get(), L"&", &next_token);
++    THR(token ? S_OK : E_FAIL);
++    token = wcstok_s(nullptr, L"&", &next_token);
++    THR(token ? S_OK : E_FAIL);
++
++    // rtc::ToUtf8 does not check for errors
++    if (::WideCharToMultiByte(CP_UTF8, 0, token, -1,
++                              reinterpret_cast<char*>(product_unique_id_UTF8),
++                              product_unique_id_UTF8_length, NULL, NULL) == 0) {
++      RTC_LOG(LS_INFO)
++          << "Failed to convert product unique id to UTF8, error = "
++          << GetLastError();
++      THR(E_FAIL);
++    }
++  }
++
++Cleanup:
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
++    const wchar_t* device_unique_id,
++    vector<VideoCaptureCapability>* video_capture_capabilities) {
++  HRESULT hr;
++  ComPtr<IAsyncOperation<DeviceInformation*>> async_op_device_information;
++  ComPtr<IDeviceInformation> device_info;
++  ComPtr<IMediaCaptureInitializationSettings> init_settings;
++  ComPtr<IMediaCaptureInitializationSettings5> init_settings5;
++  ComPtr<IMediaCapture> media_capture;
++  ComPtr<IClosable> media_capture_closable;
++  ComPtr<IAsyncAction> async_action;
++  ComPtr<IVideoDeviceController> video_device_controller;
++  ComPtr<IMediaDeviceController> media_device_controller;
++  ComPtr<IVectorView<IMediaEncodingProperties*>> stream_capabilities;
++  HStringReference device_id(device_unique_id);
++  unsigned int stream_capabilities_size;
++  vector<VideoCaptureCapability> device_caps;
++
++  THR(video_capture_capabilities ? S_OK : E_INVALIDARG);
++
++  // Assures class has been properly initialized.
++  THR(AssureInitialized());
++
++  // Calls FindAllAsync and then start the async operation.
++  THR(device_info_statics_->CreateFromIdAsync(device_id.Get(),
++                                              &async_op_device_information));
++
++  // Blocks and suspends thread until the async operation finishes or
++  // timeouts. Timeout is taked as failure.
++  THR(WaitForAsyncOperation(async_op_device_information));
++
++  // Gathers device information.
++  THR(async_op_device_information->GetResults(&device_info));
++
++  //
++  THR(ActivateInstance(
++      HStringReference(
++          RuntimeClass_Windows_Media_Capture_MediaCaptureInitializationSettings)
++          .Get(),
++      &init_settings));
++  THR(init_settings.As<IMediaCaptureInitializationSettings5>(&init_settings5));
++  THR(init_settings5->put_MemoryPreference(
++      MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu));
++  THR(init_settings->put_StreamingCaptureMode(
++      StreamingCaptureMode::StreamingCaptureMode_Video));
++  THR(init_settings->put_VideoDeviceId(device_id.Get()));
++
++  THR(ActivateInstance(
++      HStringReference(RuntimeClass_Windows_Media_Capture_MediaCapture).Get(),
++      &media_capture));
++
++  THR(media_capture->InitializeWithSettingsAsync(init_settings.Get(),
++                                                 &async_action));
++  THR(WaitForAsyncAction(async_action));
++
++  THR(media_capture->get_VideoDeviceController(&video_device_controller));
++  THR(video_device_controller.As<IMediaDeviceController>(
++      &media_device_controller));
++
++  THR(media_device_controller->GetAvailableMediaStreamProperties(
++      MediaStreamType::MediaStreamType_VideoRecord, &stream_capabilities));
++
++  THR(stream_capabilities->get_Size(&stream_capabilities_size));
++  for (unsigned int i = 0; i < stream_capabilities_size; ++i) {
++    ComPtr<IMediaEncodingProperties> media_encoding_props;
++    ComPtr<IVideoEncodingProperties> video_encoding_props;
++    ComPtr<IMediaRatio> media_ratio;
++    VideoCaptureCapability video_capture_capability;
++    HString subtype;
++
++    THR(stream_capabilities->GetAt(i, &media_encoding_props));
++
++    THR(media_encoding_props.As<IVideoEncodingProperties>(
++        &video_encoding_props));
++
++    THR(video_encoding_props->get_Width(
++        reinterpret_cast<UINT32*>(&video_capture_capability.width)));
++
++    THR(video_encoding_props->get_Height(
++        reinterpret_cast<UINT32*>(&video_capture_capability.height)));
++
++    THR(video_encoding_props->get_FrameRate(&media_ratio));
++    video_capture_capability.maxFPS =
++        SafelyComputeMediaRatio(media_ratio.Get());
++
++    THR(media_encoding_props->get_Subtype(subtype.ReleaseAndGetAddressOf()));
++    video_capture_capability.videoType = ToVideoType(subtype);
++
++    video_capture_capability.interlaced = false;
++
++    device_caps.push_back(video_capture_capability);
++  }
++
++  THR(media_capture.As<IClosable>(&media_capture_closable));
++  THR(media_capture_closable->Close());
++
++  video_capture_capabilities->swap(device_caps);
++
++Cleanup:
++  return hr;
++}
++
++// Allows not forward declaring DeviceInfoWinRTInternal in the header.
++constexpr DeviceInfoWinRTInternal* Impl(void* device_info_internal) {
++  return static_cast<DeviceInfoWinRTInternal*>(device_info_internal);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++//
++// DeviceInfoWinRT
++//
++///////////////////////////////////////////////////////////////////////////////
++
++// static
++DeviceInfoWinRT* DeviceInfoWinRT::Create() {
++  return new DeviceInfoWinRT();
++}
++
++DeviceInfoWinRT::DeviceInfoWinRT()
++    : device_info_internal_(new DeviceInfoWinRTInternal()) {}
++
++DeviceInfoWinRT::~DeviceInfoWinRT() {
++  delete Impl(device_info_internal_);
++}
++
++int32_t DeviceInfoWinRT::Init() {
++  return SUCCEEDED(Impl(device_info_internal_)->Init()) ? 0 : -1;
++}
++
++uint32_t DeviceInfoWinRT::NumberOfDevices() {
++  ReadLockScoped cs(_apiLock);
++
++  HRESULT hr;
++  uint32_t device_count = -1;
++
++  THR(Impl(device_info_internal_)->GetNumberOfDevices(&device_count));
++
++Cleanup:
++  return SUCCEEDED(hr) ? device_count : -1;
++}
++
++int32_t DeviceInfoWinRT::GetDeviceName(uint32_t device_number,
++                                       char* device_name_UTF8,
++                                       uint32_t device_name_length,
++                                       char* device_unique_id_UTF8,
++                                       uint32_t device_unique_id_UTF8_length,
++                                       char* product_unique_id_UTF8,
++                                       uint32_t product_unique_id_UTF8_length) {
++  ReadLockScoped cs(_apiLock);
++
++  HRESULT hr;
++
++  THR(Impl(device_info_internal_)
++          ->GetDeviceName(device_number, device_name_UTF8, device_name_length,
++                          device_unique_id_UTF8, device_unique_id_UTF8_length,
++                          product_unique_id_UTF8,
++                          product_unique_id_UTF8_length));
++
++  if (device_name_length) {
++    RTC_LOG(LS_INFO) << __FUNCTION__ << " " << device_name_UTF8;
++  }
++
++Cleanup:
++  return SUCCEEDED(hr) ? 0 : -1;
++}
++
++int32_t DeviceInfoWinRT::DisplayCaptureSettingsDialogBox(
++    const char* device_unique_id_utf8,
++    const char* dialog_title_utf8,
++    void* parent_window,
++    uint32_t position_x,
++    uint32_t position_y) {
++  return -1;
++}
++
++int32_t DeviceInfoWinRT::CreateCapabilityMap(
++    const char* device_unique_id_utf8) {
++  // Checks if device_unique_id_utf8 length is not too long
++  const int32_t device_unique_id_UTF8_length =
++      (int32_t)strnlen(reinterpret_cast<const char*>(device_unique_id_utf8),
++                       kVideoCaptureUniqueNameLength);
++
++  if (device_unique_id_UTF8_length == kVideoCaptureUniqueNameLength) {
++    RTC_LOG(LS_INFO) << "Device ID too long";
++    return -1;
++  }
++
++  RTC_LOG(LS_INFO) << "CreateCapabilityMap called for device "
++                   << device_unique_id_utf8;
++
++  wchar_t deviceIdW[kVideoCaptureUniqueNameLength];
++  int device_id_w_length = ::MultiByteToWideChar(
++      CP_UTF8, 0, device_unique_id_utf8, -1, deviceIdW, sizeof(deviceIdW));
++  if (device_id_w_length == 0) {
++    RTC_LOG(LS_INFO) << "Failed to convert Device ID from UTF8, error = "
++                     << GetLastError();
++    return -1;
++  }
++
++  if (FAILED(Impl(device_info_internal_)
++                 ->CreateCapabilityMap(deviceIdW, &_captureCapabilities))) {
++    return -1;
++  }
++
++  // Store the new used device name
++  _lastUsedDeviceNameLength = device_unique_id_UTF8_length;
++  _lastUsedDeviceName = reinterpret_cast<char*>(
++      realloc(_lastUsedDeviceName, _lastUsedDeviceNameLength + 1));
++  memcpy(_lastUsedDeviceName, device_unique_id_utf8,
++         _lastUsedDeviceNameLength + 1);
++
++  RTC_LOG(LS_INFO) << "CreateCapabilityMap " << _captureCapabilities.size();
++
++  return static_cast<int32_t>(_captureCapabilities.size());
++}
++
++}  // namespace videocapturemodule
++}  // namespace webrtc
+diff --git a/modules/video_capture/windows/device_info_winrt.h b/modules/video_capture/windows/device_info_winrt.h
+new file mode 100644
+index 0000000000..3ee80772c9
+--- /dev/null
++++ b/modules/video_capture/windows/device_info_winrt.h
+@@ -0,0 +1,58 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#ifndef MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_WINRT_H_
++#define MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_WINRT_H_
++
++#include "modules/video_capture/device_info_impl.h"
++
++namespace webrtc {
++namespace videocapturemodule {
++
++class DeviceInfoWinRT : public DeviceInfoImpl {
++ public:
++  // Factory function.
++  static DeviceInfoWinRT* Create();
++
++  ~DeviceInfoWinRT() override;
++
++  uint32_t NumberOfDevices() override;
++
++  //
++  // Returns the available capture devices.
++  //
++  int32_t GetDeviceName(uint32_t device_number,
++                        char* device_name_utf8,
++                        uint32_t device_name_length,
++                        char* device_unique_id_utf8,
++                        uint32_t device_unique_id_utf8_length,
++                        char* product_unique_id_utf8,
++                        uint32_t product_unique_id_utf8_length) override;
++
++  //
++  // Display OS /capture device specific settings dialog
++  //
++  int32_t DisplayCaptureSettingsDialogBox(const char* device_unique_id_utf8,
++                                          const char* dialog_title_utf8,
++                                          void* parent_window,
++                                          uint32_t position_x,
++                                          uint32_t position_y) override;
++
++  int32_t CreateCapabilityMap(const char* device_unique_id_utf8) override;
++
++ private:
++  DeviceInfoWinRT();
++  int32_t Init() override;
++
++  void* device_info_internal_;
++};
++}  // namespace videocapturemodule
++}  // namespace webrtc
++#endif  // MODULES_VIDEO_CAPTURE_WINDOWS_DEVICE_INFO_WINRT_H_
+diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
+new file mode 100644
+index 0000000000..0271bffd3e
+--- /dev/null
++++ b/modules/video_capture/windows/help_functions_winrt.cc
+@@ -0,0 +1,125 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#include "modules/video_capture/windows/help_functions_winrt.h"
++
++using ABI::Windows::Foundation::IAsyncAction;
++using ABI::Windows::Foundation::IAsyncActionCompletedHandler;
++using ABI::Windows::Media::MediaProperties::IMediaRatio;
++using Microsoft::WRL::Callback;
++using Microsoft::WRL::ComPtr;
++using Microsoft::WRL::Wrappers::Event;
++using Microsoft::WRL::Wrappers::HString;
++
++namespace webrtc {
++namespace videocapturemodule {
++
++uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
++  HRESULT hr;
++  uint32_t numerator, denominator, media_ratio = 0;
++
++  THR(ratio_no_ref->get_Numerator(&numerator));
++  THR(ratio_no_ref->get_Denominator(&denominator));
++
++  media_ratio = (denominator != 0) ? numerator / denominator : 0;
++
++Cleanup:
++  return media_ratio;
++}
++
++VideoType ToVideoType(const HString& sub_type) {
++  uint32_t cchCount;
++  const wchar_t* video_type = sub_type.GetRawBuffer(&cchCount);
++  VideoType converted_type = VideoType::kUnknown;
++
++  if (cchCount < 4 || cchCount > 8) {
++    return VideoType::kUnknown;
++  }
++
++  struct {
++    const wchar_t* format;
++    const VideoType type;
++  } static format_to_type[] = {
++      {L"I420", VideoType::kI420},         {L"I420", VideoType::kI420},
++      {L"IYUV", VideoType::kIYUV},         {L"RGB24", VideoType::kRGB24},
++      {L"ABGR", VideoType::kABGR},         {L"ARGB", VideoType::kARGB},
++      {L"ARGB4444", VideoType::kARGB4444}, {L"RGB565", VideoType::kRGB565},
++      {L"RGB565", VideoType::kRGB565},     {L"ARGB1555", VideoType::kARGB1555},
++      {L"YUY2", VideoType::kYUY2},         {L"YV12", VideoType::kYV12},
++      {L"UYVY", VideoType::kUYVY},         {L"MJPEG", VideoType::kMJPEG},
++      {L"NV21", VideoType::kNV21},         {L"NV12", VideoType::kNV12},
++      {L"BGRA", VideoType::kBGRA},
++  };
++
++  for (const auto& entry : format_to_type) {
++    if (wcsncmp(entry.format, video_type, cchCount) == 0) {
++      converted_type = entry.type;
++      break;
++    }
++  }
++
++  return converted_type;
++}
++
++HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
++  HRESULT hr, hr_async_error;
++  const DWORD timeout_ms = 2000;
++  ComPtr<IAsyncInfo> async_info;
++  Event event_completed;
++
++#if _DEBUG
++  APTTYPE apt_type;
++  APTTYPEQUALIFIER apt_qualifier;
++  THR(CoGetApartmentType(&apt_type, &apt_qualifier));
++  // Please make the caller of this API run on a MTA appartment type.
++  // The caller shouldn't be running on the UI thread (STA).
++  assert(apt_type == APTTYPE_MTA);
++#endif  // _DEBUG
++
++  // Creates the Event to be used to block and suspend until the async
++  // operation finishes.
++  event_completed =
++      Event(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
++                          WRITE_OWNER | EVENT_ALL_ACCESS));
++  THR(event_completed.IsValid() ? S_OK : E_HANDLE);
++
++  // Defines the callback that will signal the event to unblock and resume.
++  THR(async_action->put_Completed(
++      Callback<IAsyncActionCompletedHandler>([&event_completed](
++                                                 IAsyncAction*,
++                                                 AsyncStatus async_status)
++                                                 -> HRESULT {
++        HRESULT hr;
++
++        THR(async_status == AsyncStatus::Completed ? S_OK : E_ABORT);
++
++      Cleanup:
++        ::SetEvent(event_completed.Get());
++
++        return hr;
++      }).Get()));
++
++  // Block and suspend thread until the async operation finishes or timeout.
++  THR(::WaitForSingleObjectEx(event_completed.Get(), timeout_ms, FALSE) ==
++              WAIT_OBJECT_0
++          ? S_OK
++          : E_FAIL);
++
++  // Checks if async operation completed successfully.
++  THR(async_action.As<IAsyncInfo>(&async_info));
++  THR(async_info->get_ErrorCode(&hr_async_error));
++  THR(hr_async_error);
++
++Cleanup:
++  return hr;
++}
++
++}  // namespace videocapturemodule
++}  // namespace webrtc
+diff --git a/modules/video_capture/windows/help_functions_winrt.h b/modules/video_capture/windows/help_functions_winrt.h
+new file mode 100644
+index 0000000000..0216d9b0ce
+--- /dev/null
++++ b/modules/video_capture/windows/help_functions_winrt.h
+@@ -0,0 +1,108 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#ifndef MODULES_VIDEO_CAPTURE_WINDOWS_HELP_FUNCTIONS_WINRT_H_
++#define MODULES_VIDEO_CAPTURE_WINDOWS_HELP_FUNCTIONS_WINRT_H_
++
++#include <windows.foundation.h>
++#include <windows.media.mediaproperties.h>
++#include <wrl/client.h>
++#include <wrl/event.h>
++#include <wrl/wrappers/corewrappers.h>
++
++#include <cassert>
++
++#include "modules/video_capture/video_capture_defines.h"
++
++// Evaluates an expression returning a HRESULT.
++// It jumps to a label named Cleanup on failure.
++#define THR(expr)   \
++  do {              \
++    hr = (expr);    \
++    if (FAILED(hr)) \
++      goto Cleanup; \
++  } while (false)
++
++namespace webrtc {
++namespace videocapturemodule {
++
++uint32_t SafelyComputeMediaRatio(
++    ABI::Windows::Media::MediaProperties::IMediaRatio* ratio_no_ref);
++
++VideoType ToVideoType(const Microsoft::WRL::Wrappers::HString& sub_type);
++
++HRESULT WaitForAsyncAction(
++    Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncAction>
++        async_action);
++
++template <typename T>
++HRESULT WaitForAsyncOperation(
++    Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncOperation<T>>&
++        async_op) {
++  HRESULT hr, hr_async_error;
++  const DWORD timeout_ms = 2000;
++  Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncInfo> async_info;
++  Microsoft::WRL::Wrappers::Event event_completed;
++
++#if _DEBUG
++  APTTYPE apt_type;
++  APTTYPEQUALIFIER apt_qualifier;
++  THR(CoGetApartmentType(&apt_type, &apt_qualifier));
++  // Please make the caller of this API run on a MTA appartment type.
++  // The caller shouldn't be running on the UI thread (STA).
++  assert(apt_type == APTTYPE_MTA);
++#endif  // _DEBUG
++
++  // Creates the Event to be used to block and suspend until the async
++  // operation finishes.
++  event_completed = Microsoft::WRL::Wrappers::Event(
++      ::CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
++                      WRITE_OWNER | EVENT_ALL_ACCESS));
++  THR(event_completed.IsValid() ? S_OK : E_HANDLE);
++
++  // Defines the callback that will signal the event to unblock and resume.
++  THR(async_op->put_Completed(
++      Microsoft::WRL::Callback<
++          ABI::Windows::Foundation::IAsyncOperationCompletedHandler<T>>(
++          [&event_completed](
++              ABI::Windows::Foundation::IAsyncOperation<T>*,
++              ABI::Windows::Foundation::AsyncStatus async_status) -> HRESULT {
++            HRESULT hr;
++
++            THR(async_status == ABI::Windows::Foundation::AsyncStatus::Completed
++                    ? S_OK
++                    : E_ABORT);
++
++          Cleanup:
++            ::SetEvent(event_completed.Get());
++
++            return hr;
++          })
++          .Get()));
++
++  // Block and suspend thread until the async operation finishes or timeout.
++  THR(::WaitForSingleObjectEx(event_completed.Get(), timeout_ms, FALSE) ==
++              WAIT_OBJECT_0
++          ? S_OK
++          : E_FAIL);
++
++  // Checks if async operation completed successfully.
++  THR(async_op.template As<ABI::Windows::Foundation::IAsyncInfo>(&async_info));
++  THR(async_info->get_ErrorCode(&hr_async_error));
++  THR(hr_async_error);
++
++Cleanup:
++  return hr;
++}
++
++}  // namespace videocapturemodule
++}  // namespace webrtc
++
++#endif  // MODULES_VIDEO_CAPTURE_WINDOWS_HELP_FUNCTIONS_WINRT_H_
+diff --git a/modules/video_capture/windows/video_capture_factory_windows.cc b/modules/video_capture/windows/video_capture_factory_windows.cc
+index ea9d31add9..bd0b37d5d3 100644
+--- a/modules/video_capture/windows/video_capture_factory_windows.cc
++++ b/modules/video_capture/windows/video_capture_factory_windows.cc
+@@ -9,7 +9,14 @@
+  */
+ 
+ #include "api/scoped_refptr.h"
++
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++#include "modules/video_capture/windows/device_info_winrt.h"
++#include "modules/video_capture/windows/video_capture_winrt.h"
++#else
+ #include "modules/video_capture/windows/video_capture_ds.h"
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+ #include "rtc_base/ref_counted_object.h"
+ 
+ namespace webrtc {
+@@ -17,8 +24,11 @@ namespace videocapturemodule {
+ 
+ // static
+ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
+-  // TODO(tommi): Use the Media Foundation version on Vista and up.
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  return DeviceInfoWinRT::Create();
++#else
+   return DeviceInfoDS::Create();
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
+ }
+ 
+ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+@@ -26,9 +36,14 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+   if (device_id == nullptr)
+     return nullptr;
+ 
+-  // TODO(tommi): Use Media Foundation implementation for Vista and up.
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  rtc::scoped_refptr<VideoCaptureWinRT> capture(
++      new rtc::RefCountedObject<VideoCaptureWinRT>());
++#else
+   rtc::scoped_refptr<VideoCaptureDS> capture(
+       new rtc::RefCountedObject<VideoCaptureDS>());
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+   if (capture->Init(device_id) != 0) {
+     return nullptr;
+   }
+diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
+new file mode 100644
+index 0000000000..86fbe524a3
+--- /dev/null
++++ b/modules/video_capture/windows/video_capture_winrt.cc
+@@ -0,0 +1,537 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#include "modules/video_capture/windows/video_capture_winrt.h"
++
++#include <Windows.Devices.Enumeration.h>
++#include <Windows.Foundation.Collections.h>
++#include <unknwn.h>
++#include <windows.foundation.h>
++#include <windows.media.capture.h>
++#include <wrl/client.h>
++#include <wrl/event.h>
++#include <wrl/implements.h>
++#include <wrl/wrappers/corewrappers.h>
++
++#include <cassert>
++#include <functional>
++
++#include "modules/video_capture/video_capture_config.h"
++#include "modules/video_capture/windows/help_functions_winrt.h"
++#include "rtc_base/logging.h"
++
++struct __declspec(uuid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")) __declspec(
++    novtable) IMemoryBufferByteAccess : ::IUnknown {
++  virtual HRESULT __stdcall GetBuffer(uint8_t** value, uint32_t* capacity) = 0;
++};
++
++using ABI::Windows::Foundation::ActivateInstance;
++using ABI::Windows::Foundation::IAsyncAction;
++using ABI::Windows::Foundation::IAsyncOperation;
++using ABI::Windows::Foundation::IClosable;
++using ABI::Windows::Foundation::IMemoryBuffer;
++using ABI::Windows::Foundation::IMemoryBufferReference;
++using ABI::Windows::Foundation::ITypedEventHandler;
++using ABI::Windows::Foundation::Collections::IIterable;
++using ABI::Windows::Foundation::Collections::IIterator;
++using ABI::Windows::Foundation::Collections::IKeyValuePair;
++using ABI::Windows::Foundation::Collections::IMapView;
++using ABI::Windows::Foundation::Collections::IVectorView;
++using ABI::Windows::Graphics::Imaging::BitmapBufferAccessMode;
++using ABI::Windows::Graphics::Imaging::IBitmapBuffer;
++using ABI::Windows::Graphics::Imaging::ISoftwareBitmap;
++using ABI::Windows::Media::Capture::IMediaCapture5;
++using ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings;
++using ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings5;
++using ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
++using ABI::Windows::Media::Capture::MediaStreamType;
++using ABI::Windows::Media::Capture::StreamingCaptureMode;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameFormat;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameReader;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameReference;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameSource;
++using ABI::Windows::Media::Capture::Frames::IMediaFrameSourceInfo;
++using ABI::Windows::Media::Capture::Frames::IVideoMediaFrame;
++using ABI::Windows::Media::Capture::Frames::IVideoMediaFrameFormat;
++using ABI::Windows::Media::Capture::Frames::MediaFrameArrivedEventArgs;
++using ABI::Windows::Media::Capture::Frames::MediaFrameFormat;
++using ABI::Windows::Media::Capture::Frames::MediaFrameReader;
++using ABI::Windows::Media::Capture::Frames::MediaFrameReaderStartStatus;
++using ABI::Windows::Media::Capture::Frames::MediaFrameSource;
++using ABI::Windows::Media::Capture::Frames::MediaFrameSourceKind;
++using ABI::Windows::Media::MediaProperties::IMediaRatio;
++using Microsoft::WRL::Callback;
++using Microsoft::WRL::ComPtr;
++using Microsoft::WRL::Wrappers::HString;
++using Microsoft::WRL::Wrappers::HStringReference;
++
++namespace webrtc {
++namespace videocapturemodule {
++
++///////////////////////////////////////////////////////////////////////////////
++//
++//  VideoCaptureWinRTInternal
++//
++///////////////////////////////////////////////////////////////////////////////
++
++// Callback type for the following method:
++// int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
++//                     size_t videoFrameLength,
++//                     const VideoCaptureCapability& frameInfo,
++//                     int64_t captureTime = 0);
++typedef std::function<
++    int32_t(uint8_t*, size_t, const VideoCaptureCapability&, int64_t)>
++    PFNIncomingFrameType;
++
++struct VideoCaptureWinRTInternal {
++ public:
++  explicit VideoCaptureWinRTInternal(
++      const PFNIncomingFrameType& pfn_incoming_frame);
++
++  ~VideoCaptureWinRTInternal();
++
++  HRESULT InitCamera(const wchar_t* pDeviceId);
++  HRESULT StartCapture(const VideoCaptureCapability& capability);
++  HRESULT StopCapture();
++  bool CaptureStarted();
++
++  HRESULT FrameArrived(
++      ABI::Windows::Media::Capture::Frames::IMediaFrameReader* sender,
++      ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs* args);
++
++ private:
++  Microsoft::WRL::ComPtr<ABI::Windows::Media::Capture::IMediaCapture>
++      media_capture_;
++
++  Microsoft::WRL::ComPtr<
++      ABI::Windows::Media::Capture::Frames::IMediaFrameReader>
++      media_frame_reader_;
++  EventRegistrationToken media_source_frame_arrived_token;
++
++  bool is_capturing = false;
++  PFNIncomingFrameType pfn_incoming_frame_;
++};
++
++VideoCaptureWinRTInternal::VideoCaptureWinRTInternal(
++    const PFNIncomingFrameType& pfn_incoming_frame)
++    : pfn_incoming_frame_(pfn_incoming_frame) {}
++
++VideoCaptureWinRTInternal::~VideoCaptureWinRTInternal() {
++  HRESULT hr = S_OK;
++
++  if (media_capture_) {
++    ComPtr<IClosable> closable;
++
++    THR(StopCapture());
++    THR(media_capture_.As(&closable));
++    THR(closable->Close());
++  }
++
++Cleanup:
++  assert(SUCCEEDED(hr));
++}
++
++HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
++  HRESULT hr;
++  ComPtr<IMediaCaptureInitializationSettings> settings;
++  ComPtr<IMediaCaptureInitializationSettings5> settings5;
++  ComPtr<IAsyncAction> async_action;
++  HStringReference device_id(device_unique_id);
++
++  if (media_capture_) {
++    ComPtr<IClosable> closable_media_capture;
++    THR(media_capture_.As(&closable_media_capture));
++
++    THR(StopCapture() == 0 ? S_OK : E_FAIL);
++    THR(closable_media_capture->Close());
++  }
++  THR(ActivateInstance(
++      HStringReference(RuntimeClass_Windows_Media_Capture_MediaCapture).Get(),
++      media_capture_.ReleaseAndGetAddressOf()));
++
++  // Defines the settings to be used the camera
++  THR(ActivateInstance(
++      HStringReference(
++          RuntimeClass_Windows_Media_Capture_MediaCaptureInitializationSettings)
++          .Get(),
++      &settings));
++  THR(settings.As(&settings5));
++  THR(settings5->put_MemoryPreference(
++      MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu));
++  THR(settings->put_StreamingCaptureMode(
++      StreamingCaptureMode::StreamingCaptureMode_Video));
++  THR(settings->put_VideoDeviceId(device_id.Get()));
++
++  THR(media_capture_->InitializeWithSettingsAsync(settings.Get(),
++                                                  &async_action));
++  THR(WaitForAsyncAction(async_action));
++
++Cleanup:
++  return hr;
++}
++
++HRESULT VideoCaptureWinRTInternal::StartCapture(
++    const VideoCaptureCapability& capability) {
++  HRESULT hr;
++  ComPtr<IMediaFrameSource> media_frame_source;
++  ComPtr<IMediaCapture5> media_capture5;
++  ComPtr<IMapView<HSTRING, MediaFrameSource*>> frame_sources;
++  ComPtr<IIterable<IKeyValuePair<HSTRING, MediaFrameSource*>*>> iterable;
++  ComPtr<IIterator<IKeyValuePair<HSTRING, MediaFrameSource*>*>> iterator;
++  ComPtr<IAsyncOperation<MediaFrameReader*>> async_operation;
++  ComPtr<IAsyncOperation<MediaFrameReaderStartStatus>>
++      async_media_frame_reader_start_status;
++  MediaFrameReaderStartStatus media_frame_reader_start_status;
++  boolean has_current;
++
++  THR(media_capture_.As(&media_capture5));
++  THR(media_capture5->get_FrameSources(&frame_sources));
++  THR(frame_sources.As(&iterable));
++  THR(iterable->First(&iterator));
++  THR(iterator->get_HasCurrent(&has_current));
++
++  while (has_current) {
++    ComPtr<IKeyValuePair<HSTRING, MediaFrameSource*>> key_value;
++    ComPtr<IMediaFrameSource> value;
++    ComPtr<IMediaFrameSourceInfo> info;
++    ComPtr<IVectorView<MediaFrameFormat*>> supported_formats;
++    ComPtr<IVideoMediaFrameFormat> video_media_frame_format;
++    ComPtr<IMediaRatio> media_ratio;
++    MediaStreamType media_stream_type;
++    MediaFrameSourceKind media_frame_source_kind;
++    unsigned int supported_formats_count;
++    UINT32 frame_width, frame_height;
++
++    THR(iterator->get_Current(&key_value));
++    THR(key_value->get_Value(&value));
++
++    // Filters out frame sources other than color video cameras.
++    THR(value->get_Info(&info));
++    THR(info->get_MediaStreamType(&media_stream_type));
++    THR(info->get_SourceKind(&media_frame_source_kind));
++    if ((media_stream_type != MediaStreamType::MediaStreamType_VideoRecord) ||
++        (media_frame_source_kind !=
++         MediaFrameSourceKind::MediaFrameSourceKind_Color)) {
++      THR(iterator->MoveNext(&has_current));
++      continue;
++    }
++
++    THR(value->get_SupportedFormats(&supported_formats));
++    THR(supported_formats->get_Size(&supported_formats_count));
++
++    for (unsigned int i = 0; i < supported_formats_count; ++i) {
++      ComPtr<IMediaFrameFormat> media_frame_format;
++      ComPtr<IAsyncAction> async_action;
++      HString sub_type;
++
++      THR(supported_formats->GetAt(i, &media_frame_format));
++
++      // Filters out frame sources not sending frames in I420, YUY2, YV12 or
++      // the format requested by the requested capabilities.
++      THR(media_frame_format->get_Subtype(sub_type.ReleaseAndGetAddressOf()));
++      VideoType video_type = ToVideoType(sub_type);
++      if (video_type != capability.videoType &&
++          video_type != VideoType::kI420 && video_type != VideoType::kYUY2 &&
++          video_type != VideoType::kYV12) {
++        THR(iterator->MoveNext(&has_current));
++        continue;
++      }
++
++      // Filters out frame sources with resolution different than the one
++      // defined by the requested capabilities.
++      THR(media_frame_format->get_VideoFormat(&video_media_frame_format));
++      THR(video_media_frame_format->get_Width(&frame_width));
++      THR(video_media_frame_format->get_Height(&frame_height));
++      if ((frame_width != static_cast<UINT32>(capability.width)) ||
++          (frame_height != static_cast<UINT32>(capability.height))) {
++        THR(iterator->MoveNext(&has_current));
++        continue;
++      }
++
++      // Filters os frames sources with frame rate higher than the what is
++      // requested by the capabilities.
++      THR(media_frame_format->get_FrameRate(&media_ratio));
++      if (SafelyComputeMediaRatio(media_ratio.Get()) >
++          static_cast<uint32_t>(capability.maxFPS)) {
++        THR(iterator->MoveNext(&has_current));
++        continue;
++      }
++
++      // Select this as media frame source.
++      media_frame_source = value;
++
++      THR(media_frame_source->SetFormatAsync(media_frame_format.Get(),
++                                             &async_action));
++      THR(WaitForAsyncAction(async_action));
++
++      break;
++    }
++
++    // The same camera might provide many sources, for example, Surface
++    // Studio 2 camera has a color source provider and a depth source
++    // provider. We don't need to continue looking for sources once the first
++    // color source provider matches with the configuration we're looking for.
++    if (media_frame_source) {
++      break;
++    }
++  }
++
++  // video capture device with capabilities not found
++  THR(media_frame_source ? S_OK : E_FAIL);
++
++  THR(media_capture5->CreateFrameReaderAsync(media_frame_source.Get(),
++                                             &async_operation));
++  THR(WaitForAsyncOperation(async_operation));
++
++  // Assigns a new media frame reader
++  THR(async_operation->GetResults(&media_frame_reader_));
++
++  THR(media_frame_reader_->add_FrameArrived(
++      Callback<
++          ITypedEventHandler<MediaFrameReader*, MediaFrameArrivedEventArgs*>>(
++          [this](IMediaFrameReader* pSender,
++                 IMediaFrameArrivedEventArgs* pEventArgs) {
++            return this->FrameArrived(pSender, pEventArgs);
++          })
++          .Get(),
++      &media_source_frame_arrived_token));
++
++  THR(media_frame_reader_->StartAsync(&async_media_frame_reader_start_status));
++  THR(WaitForAsyncOperation(async_media_frame_reader_start_status));
++
++  THR(async_media_frame_reader_start_status->GetResults(
++      &media_frame_reader_start_status));
++  THR(media_frame_reader_start_status !=
++              MediaFrameReaderStartStatus::MediaFrameReaderStartStatus_Success
++          ? E_FAIL
++          : S_OK);
++
++  is_capturing = true;
++
++Cleanup:
++  return hr;
++}
++
++HRESULT VideoCaptureWinRTInternal::StopCapture() {
++  HRESULT hr = S_OK;
++
++  if (!media_frame_reader_) {
++    return hr;
++  }
++
++  if (is_capturing) {
++    ComPtr<IAsyncAction> async_action;
++
++    THR(media_frame_reader_->remove_FrameArrived(
++        media_source_frame_arrived_token));
++    THR(media_frame_reader_->StopAsync(&async_action));
++    THR(WaitForAsyncAction(async_action));
++  }
++
++  is_capturing = false;
++
++Cleanup:
++  media_frame_reader_.Reset();
++  return hr;
++}
++
++bool VideoCaptureWinRTInternal::CaptureStarted() {
++  return is_capturing;
++}
++
++HRESULT VideoCaptureWinRTInternal::FrameArrived(
++    ABI::Windows::Media::Capture::Frames::IMediaFrameReader* sender_no_ref,
++    ABI::Windows::Media::Capture::Frames::IMediaFrameArrivedEventArgs*
++        args_no_ref) {
++  UNREFERENCED_PARAMETER(args_no_ref);
++
++  HRESULT hr;
++  ComPtr<IMediaFrameReader> media_frame_reader{sender_no_ref};
++  ComPtr<IMediaFrameReference> media_frame_reference;
++  ComPtr<IVideoMediaFrame> video_media_frame;
++  ComPtr<IVideoMediaFrameFormat> video_media_frame_format;
++  ComPtr<IMediaFrameFormat> media_frame_format;
++  ComPtr<IMediaRatio> media_ratio;
++  ComPtr<ISoftwareBitmap> software_bitmap;
++  ComPtr<IBitmapBuffer> bitmap_buffer;
++  ComPtr<IMemoryBuffer> memory_buffer;
++  ComPtr<IMemoryBufferReference> memory_buffer_reference;
++  ComPtr<IMemoryBufferByteAccess> memory_buffer_byte_access;
++  HString video_subtype;
++  uint8_t* bitmap_content;
++  uint32_t bitmap_capacity;
++
++  THR(media_frame_reader->TryAcquireLatestFrame(&media_frame_reference));
++
++  if (media_frame_reference) {
++    THR(media_frame_reference->get_VideoMediaFrame(&video_media_frame));
++    THR(video_media_frame->get_VideoFormat(&video_media_frame_format));
++    THR(video_media_frame_format->get_MediaFrameFormat(&media_frame_format));
++    THR(media_frame_format->get_FrameRate(&media_ratio));
++
++    VideoCaptureCapability frameInfo;
++    THR(video_media_frame_format->get_Width(
++        reinterpret_cast<UINT32*>(&frameInfo.width)));
++    THR(video_media_frame_format->get_Height(
++        reinterpret_cast<UINT32*>(&frameInfo.height)));
++    THR(media_frame_format->get_Subtype(
++        video_subtype.ReleaseAndGetAddressOf()));
++    frameInfo.videoType = ToVideoType(video_subtype);
++    frameInfo.maxFPS = SafelyComputeMediaRatio(media_ratio.Get());
++    frameInfo.interlaced = false;
++
++    THR(video_media_frame->get_SoftwareBitmap(&software_bitmap));
++    THR(software_bitmap->LockBuffer(
++        BitmapBufferAccessMode::BitmapBufferAccessMode_Read, &bitmap_buffer));
++    THR(bitmap_buffer.As(&memory_buffer));
++    THR(memory_buffer->CreateReference(&memory_buffer_reference));
++    THR(memory_buffer_reference.As(&memory_buffer_byte_access));
++    THR(memory_buffer_byte_access->GetBuffer(&bitmap_content,
++                                             &bitmap_capacity));
++
++    pfn_incoming_frame_(bitmap_content, bitmap_capacity, frameInfo, 0);
++  }
++
++Cleanup:
++  if (memory_buffer_reference) {
++    ComPtr<IClosable> closable;
++    memory_buffer_reference.As(&closable);
++    closable->Close();
++  }
++
++  if (bitmap_buffer) {
++    ComPtr<IClosable> closable;
++    bitmap_buffer.As(&closable);
++    closable->Close();
++  }
++
++  if (software_bitmap) {
++    ComPtr<IClosable> closable;
++    software_bitmap.As(&closable);
++    closable->Close();
++  }
++
++  if (media_frame_reference) {
++    ComPtr<IClosable> closable;
++    media_frame_reference.As(&closable);
++    closable->Close();
++  }
++
++  return hr;
++}
++
++// Avoids forward declaring VideoCaptureWinRTInternal in the header.
++constexpr VideoCaptureWinRTInternal* Impl(void* video_capture_internal) {
++  return static_cast<VideoCaptureWinRTInternal*>(video_capture_internal);
++}
++
++///////////////////////////////////////////////////////////////////////////////
++//
++//   VideoCaptureWinRT
++//
++///////////////////////////////////////////////////////////////////////////////
++
++VideoCaptureWinRT::VideoCaptureWinRT()
++    : video_capture_internal_(new VideoCaptureWinRTInternal(
++          std::bind(&VideoCaptureWinRT::IncomingFrame,
++                    this,
++                    std::placeholders::_1,
++                    std::placeholders::_2,
++                    std::placeholders::_3,
++                    std::placeholders::_4))) {}
++
++VideoCaptureWinRT::~VideoCaptureWinRT() {
++  delete Impl(video_capture_internal_);
++}
++
++// Helper method for filling _deviceUniqueId defined by the super class
++int32_t VideoCaptureWinRT::SetDeviceUniqueId(
++    const char* device_unique_id_UTF8) {
++  auto device_id_length =
++      strnlen(device_unique_id_UTF8, kVideoCaptureUniqueNameLength);
++
++  if (device_id_length == kVideoCaptureUniqueNameLength) {
++    RTC_LOG(LS_INFO) << "deviceUniqueId too long";
++    return -1;
++  }
++
++  if (_deviceUniqueId) {
++    RTC_LOG(LS_INFO) << "_deviceUniqueId leaked";
++    delete[] _deviceUniqueId;
++    _deviceUniqueId = nullptr;
++  }
++
++  // Store the device name
++  // VideoCaptureImpl::~VideoCaptureImpl reclaims _deviceUniqueId
++  _deviceUniqueId = new char[device_id_length + 1];
++  memcpy(_deviceUniqueId, device_unique_id_UTF8, device_id_length + 1);
++
++  return 0;
++}
++
++int32_t VideoCaptureWinRT::Init(const char* device_unique_id_UTF8) {
++  // Gets hstring from deviceId utf8
++  wchar_t device_id_w[kVideoCaptureUniqueNameLength];
++  int device_id_w_length = MultiByteToWideChar(
++      CP_UTF8, 0, device_unique_id_UTF8, -1, device_id_w, sizeof(device_id_w));
++  if (device_id_w_length == 0) {
++    return -1;
++  }
++
++  // Sets _deviceUniqueId defined by the super class
++  if (SetDeviceUniqueId(device_unique_id_UTF8)) {
++    return -1;
++  }
++
++  // Initializes the camera with desired settings
++  if (Impl(video_capture_internal_)->InitCamera(device_id_w)) {
++    return -1;
++  }
++
++  return 0;
++}
++
++int32_t VideoCaptureWinRT::StartCapture(
++    const VideoCaptureCapability& capability) {
++  rtc::CritScope cs(&_apiCs);
++
++  if (CaptureStarted()) {
++    if (capability == _requestedCapability) {
++      return 0;
++    }
++    StopCapture();
++  }
++
++  int32_t ret = Impl(video_capture_internal_)->StartCapture(capability);
++
++  if (SUCCEEDED(ret)) {
++    _requestedCapability = capability;
++  }
++
++  return ret;
++}
++
++int32_t VideoCaptureWinRT::StopCapture() {
++  rtc::CritScope cs(&_apiCs);
++  return Impl(video_capture_internal_)->StopCapture();
++}
++
++bool VideoCaptureWinRT::CaptureStarted() {
++  return Impl(video_capture_internal_)->CaptureStarted();
++}
++
++int32_t VideoCaptureWinRT::CaptureSettings(VideoCaptureCapability& settings) {
++  settings = _requestedCapability;
++  return 0;
++}
++
++}  // namespace videocapturemodule
++}  // namespace webrtc
+diff --git a/modules/video_capture/windows/video_capture_winrt.h b/modules/video_capture/windows/video_capture_winrt.h
+new file mode 100644
+index 0000000000..6c4f9f5116
+--- /dev/null
++++ b/modules/video_capture/windows/video_capture_winrt.h
+@@ -0,0 +1,48 @@
++/*
++ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#ifndef MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
++#define MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
++
++#include "api/scoped_refptr.h"
++#include "modules/video_capture/video_capture_impl.h"
++
++namespace webrtc {
++namespace videocapturemodule {
++
++class VideoCaptureWinRT : public VideoCaptureImpl {
++ public:
++  VideoCaptureWinRT();
++
++  int32_t Init(const char* device_unique_id_UTF8);
++
++  //
++  //  Start/Stop
++  //
++  int32_t StartCapture(const VideoCaptureCapability& capability) override;
++  int32_t StopCapture() override;
++
++  //
++  //  Properties of the set device
++  //
++  bool CaptureStarted() override;
++  int32_t CaptureSettings(VideoCaptureCapability& settings) override;
++
++ protected:
++  ~VideoCaptureWinRT() override;
++
++ private:
++  int32_t SetDeviceUniqueId(const char* device_unique_id_UTF8);
++  void* video_capture_internal_;
++};
++
++}  // namespace videocapturemodule
++}  // namespace webrtc
++#endif  // MODULES_VIDEO_CAPTURE_WINDOWS_VIDEO_CAPTURE_WINRT_H_
+diff --git a/webrtc.gni b/webrtc.gni
+index 56a1b0deca..df293432b6 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -190,6 +190,15 @@ declare_args() {
+   # doesn't assume /DUNICODE and /D_UNICODE but that it explicitly uses
+   # wide character functions.
+   rtc_win_undef_unicode = false
++
++  # Defines which API should be used by the video capture module on Windows.
++  # The following are the current options:
++  # False: It uses DirectShow APIs. DirectShow should be used on builds
++  #        that need to be compatible with old versions of Windows (Vista/7).
++  # True:  It uses the Windows::Media APIs. This option is recommended for
++  #        Windows 10. It is ok to use this option with any API family
++  #        (desktop (Win32), app (Store), ...).
++  rtc_win_video_capture_winrt = false
+ }
+ 
+ if (!build_with_mozilla) {
+-- 
+2.22.0.vfs.1.1.57.gbaf16c8
+

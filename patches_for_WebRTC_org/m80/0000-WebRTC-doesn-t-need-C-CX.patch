@@ -1,0 +1,43 @@
+From d4ad231924bb482fd6c4741df4baf0265ba7d143 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Fri, 28 Feb 2020 10:46:24 -0800
+Subject: [PATCH] Adding C++17 and Exceptions because WinRT/C++. Adding
+ microsoft-templates for the audio module.
+
+---
+ config/win/BUILD.gn | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index b050343a6..9a332787c 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -61,7 +61,7 @@ config("compiler") {
+     "/FS",  # Preserve previous PDB behavior.
+     "/bigobj",  # Some of our files are bigger than the regular limits.
+     "/utf-8",  # Assume UTF-8 by default to avoid code page dependencies.
+-  ]
++ ]
+ 
+   if (is_clang) {
+     cflags += [ "/Zc:twoPhase" ]
+@@ -244,9 +244,14 @@ config("runtime_library") {
+       defines += [ "WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP" ]
+     }
+     cflags_cc += [
+-      "/ZW",
+-      "/EHsc",
++      "/std:c++17",  # Required for having a wrapper using the WinRT/C++ projection.
++      "/EHsc",  # Required for having a wrapper using the WinRT/C++ projection.
+     ]
++    if (is_clang) {
++      cflags += [
++        "-Wno-microsoft-template",  # The audio module uses some templates Microsoft style.
++      ]
++    }
+ 
+     # This warning is given because the linker cannot tell the difference
+     # between consuming WinRT APIs versus authoring WinRT within static
+-- 
+2.17.1.windows.2
+

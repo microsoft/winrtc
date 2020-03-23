@@ -1,0 +1,34 @@
+From 57b8d8e2e4baf1a337350952bd7755959bed1911 Mon Sep 17 00:00:00 2001
+From: Filippo Banno <fiban@microsoft.com>
+Date: Wed, 19 Feb 2020 14:06:31 +0000
+Subject: [PATCH] Cast thread start to correct parameter type
+
+LPTHREAD_START_ROUTINE returns a DWORD that is defined to unsigned long (but is still 32 bits).
+---
+ vpx_util/vpx_thread.h | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/vpx_util/vpx_thread.h b/vpx_util/vpx_thread.h
+index 6d308e949..5f02781a1 100644
+--- a/vpx_util/vpx_thread.h
++++ b/vpx_util/vpx_thread.h
+@@ -76,10 +76,12 @@ static INLINE int pthread_create(pthread_t *const thread, const void *attr,
+                                  void *arg) {
+   (void)attr;
+ #ifdef USE_CREATE_THREAD
+-  *thread = CreateThread(NULL,          /* lpThreadAttributes */
+-                         0,             /* dwStackSize */
+-                         start, arg, 0, /* dwStackSize */
+-                         NULL);         /* lpThreadId */
++  *thread = CreateThread(NULL,                          /* lpThreadAttributes */
++                         0,                             /* dwStackSize */
++                         (LPTHREAD_START_ROUTINE)start, /* lpStartAddress */
++                         arg,                           /* lpParameter */
++                         0,                             /* dwCreationFlags */
++                         NULL);                         /* lpThreadId */
+ #else
+   *thread = (pthread_t)_beginthreadex(NULL,          /* void *security */
+                                       0,             /* unsigned stack_size */
+-- 
+2.25.0.windows.1
+

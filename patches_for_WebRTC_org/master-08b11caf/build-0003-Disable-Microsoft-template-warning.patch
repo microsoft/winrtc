@@ -1,0 +1,29 @@
+From fdb336c7e4e795a4f0609998d231e919cd59cd96 Mon Sep 17 00:00:00 2001
+From: Filippo Banno <fiban@microsoft.com>
+Date: Mon, 9 Mar 2020 11:07:52 +0000
+Subject: [PATCH 3/3] Disable Microsoft template warning
+
+Triggered by audio capture module
+---
+ config/win/BUILD.gn | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index 8865df47d..0845e2744 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -68,7 +68,10 @@ config("compiler") {
+   ]
+ 
+   if (is_clang) {
+-    cflags += [ "/Zc:twoPhase" ]
++    cflags += [
++                "/Zc:twoPhase",
++                "-Wno-microsoft-template"
++              ]
+   }
+ 
+   # Force C/C++ mode for the given GN detected file type. This is necessary
+-- 
+2.25.1.windows.1
+
