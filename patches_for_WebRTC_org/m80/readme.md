@@ -2,7 +2,7 @@
 
 This document will walk you through the steps required for getting WebRTC code base, patching it and build it for UWP.
 
-These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contribute changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible.
+These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contributing changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible.
 
 Building WebRTC from scratch is extremely powerful, but it is a lot of work. If you are looking for shipping a limited set of codecs or greater control of the binary size, building from scratch is the way to go. However, we believe that most developers would be ok with a more off of shelf solution.
 
@@ -10,7 +10,7 @@ We're also investigating the feasibility of having NuGet packages of a patched W
 
 # Prerequisites
 
-To build WebRTC rapidly requires a biffy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 18362 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **100GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
+To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 18362 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **100GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
 
 You'll also need **Microsoft Visual Studio 2019**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 
@@ -52,7 +52,7 @@ Set the path environment variable to execute commands in the depot_tools folder.
 set PATH=c:\depot_tools;%PATH%
 ```
 
-> Keep in ming that the previous command gave priority to programs sitting in that folder. One of the programs sitting in the depot_tools folder is a batch file named git. It means that for the duration of this terminal session, when you execute **git** you're calling Google's git, not the one was previously installed in your dev box.
+> Keep in mind that the previous command gave priority to programs sitting in that folder. One of the programs sitting in the depot_tools folder is a batch file named git. It means that for the duration of this terminal session, when you execute **git** you're calling Google's git, not the one was previously installed in your dev box.
 
 Make sure that any python program executed in this session comes from the depot_tools.
 
@@ -134,6 +134,14 @@ WebRTC is a extensive project and not all of its modules are required for produc
 ```shell
 gn --ide=vs2019 gen out\msvc\x64\Release --filters=//:webrtc "--args=is_debug=false use_lld=false is_clang=false rtc_include_tests=false rtc_build_tools=false rtc_win_video_capture_winrt=true target_os=\"winuwp\" rtc_build_examples=false"
 ```
+
+This will set up the `out\msvc\x64\Release` folder for building WebRTC for the UWP x64 Release configuration. Build settings can be customized. To view the full list of editable build arguments, you can run
+
+```shell
+gn args --list out\msvc\x64\Release
+```
+
+Please note that not all settings are supported in a UWP build.
 
 ## Building
 
