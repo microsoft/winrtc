@@ -30,7 +30,5 @@ git.exe am "%PATCH_DIR%..\m80\0004-This-is-a-change-that-fixes-3-issues-in-the-r
 git.exe am "%PATCH_DIR%..\m80\0005-Fixing-UWP-build-for-time_utils.cc.patch"
 git.exe am "%PATCH_DIR%..\m80\0006-Fixing-UWP-build-for-file_rotating_stream.cc.patch"
 git.exe am "%PATCH_DIR%..\m80\0007-Fixing-UWP-build-for-modules-video_capture.patch"
-
-rem TODO comment this to build on win32
 git.exe am "%PATCH_DIR%1008-Fixing-UWP-build-for-modules-audio_device.patch"
 popd
