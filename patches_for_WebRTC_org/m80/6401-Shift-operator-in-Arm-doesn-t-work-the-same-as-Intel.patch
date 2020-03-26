@@ -1,0 +1,49 @@
+From 39dc26711df8784a015db2501a85fe92726b3cc9 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Wed, 25 Mar 2020 23:24:15 -0700
+Subject: [PATCH] Shift operator in Arm doesn't work the same as Intel
+
+---
+ modules/audio_processing/aec3/fft_data.h             | 3 +++
+ modules/audio_processing/legacy_noise_suppression.cc | 3 ++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/modules/audio_processing/aec3/fft_data.h b/modules/audio_processing/aec3/fft_data.h
+index 5e5adb62de..7707249704 100644
+--- a/modules/audio_processing/aec3/fft_data.h
++++ b/modules/audio_processing/aec3/fft_data.h
+@@ -44,6 +44,8 @@ struct FftData {
+   void Spectrum(Aec3Optimization optimization,
+                 rtc::ArrayView<float> power_spectrum) const {
+     RTC_DCHECK_EQ(kFftLengthBy2Plus1, power_spectrum.size());
++#pragma warning(push)
++#pragma warning(disable:4065)
+     switch (optimization) {
+ #if defined(WEBRTC_ARCH_X86_FAMILY)
+       case Aec3Optimization::kSse2: {
+@@ -65,6 +67,7 @@ struct FftData {
+         std::transform(re.begin(), re.end(), im.begin(), power_spectrum.begin(),
+                        [](float a, float b) { return a * a + b * b; });
+     }
++#pragma warning(pop)
+   }
+ 
+   // Copy the data from an interleaved array.
+diff --git a/modules/audio_processing/legacy_noise_suppression.cc b/modules/audio_processing/legacy_noise_suppression.cc
+index b2c88536ca..cc429397f8 100644
+--- a/modules/audio_processing/legacy_noise_suppression.cc
++++ b/modules/audio_processing/legacy_noise_suppression.cc
+@@ -151,8 +151,9 @@ std::vector<float> NoiseSuppression::NoiseEstimate() {
+     int q_noise;
+     const uint32_t* noise =
+         WebRtcNsx_noise_estimate(suppressor->state(), &q_noise);
++    const int32_t noise_factor = 1i32 << static_cast<int32_t>(q_noise);
+     const float kNormalizationFactor =
+-        1.f / ((1 << q_noise) * suppressors_.size());
++        1.f / (noise_factor * suppressors_.size());
+     for (size_t i = 0; i < noise_estimate.size(); ++i) {
+       noise_estimate[i] += kNormalizationFactor * noise[i];
+     }
+-- 
+2.17.1.windows.2
+
