@@ -10,7 +10,7 @@ We're also investigating the feasibility of having NuGet packages of a patched W
 
 # Prerequisites
 
-To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 18362 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **100GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
+To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 18362 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **15GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
 
 You'll also need **Microsoft Visual Studio 2019**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 If you want to build for ARM/ARM64, also select the C++ MFC and ATL v142 build tools and **C++ Universal Windows Platform support for v142 build tools** for the corresponding architecture.
@@ -25,24 +25,33 @@ Open the **Windows Terminal** and type the following commands:
 
 ## Getting depot_tools
 
-WebRTC uses Chromium's build tools named **depot_tools**. You can download it with **curl** that is now shipped with Windows. The following command will download depot_tool.zip to the current folder.
+WebRTC uses Chromium's build tools named **depot_tools**. depot_tools is constantly updated and we're going to grab the right one for the m80 branch. Let's start by cloning the depot_tools repo in the root of the c: drive.
 
 ```shell
-curl https://storage.googleapis.com/chrome-infra/depot_tools.zip --output depot_tools.zip
+c:
+cd \
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools
 ```
 
-Use the following command to open the zip file in File Explorer.
+Let's switch to the m80 branch of depot_tools and bring the most recent bits for this branch to your machine.
 
 ```shell
-RunDll32.exe zipfldr.dll,RouteTheCall depot_tools.zip
+cd depot_tools
+git checkout chrome/3987
+git fetch
 ```
 
-Click on the **Extract all** button and extract the contents of the zip file into the root of the C: drive (**C:\depot_tools**).
-
-Let's not clutter our dev box, so feel free to delete the depot_tools.zip file.
+depot_tools has some tools that are not part of the repo and need to be downloaded. Let's download these extra tools.
 
 ```shell
-del depot_tools.zip
+gclient
+```
+
+At this moment, gclient will offer you to use the most recent version of depot_tools. We do **not** want that.
+
+```shell
+Your depot_tools checkout is configured to fetch from an obsolete URL
+Would you like to update it? [y/N]: N
 ```
 
 ## Setting up the environment
@@ -62,6 +71,25 @@ where python
 ```
 
 The response should be **c:\depot_tools\python.bat**.
+
+Now that we're using the right python version from depot_tool, let's install pip and pywin.
+
+Let's first install pip.
+
+```shell
+python -m pip install --upgrade pip
+cd c:\depot_tools\
+pip install pywin32
+```
+
+After that, install pywin.
+
+```shell
+cd S:\depot_tools\bootstrap-3_8_0b1_chromium_1_bin\python\bin\Scripts
+pip install pywin32
+```
+
+> Don't worry about the deprecation notice from Python 2.7. Migrating to Python3 is a working in progress that didn't make it to the m80 branch.
 
 Let's inform depot_tools that we don't have access to Google's internal tools.
 
@@ -97,11 +125,11 @@ Request the tools to fetch the WebRTC code base.
 fetch --nohooks --no-history webrtc
 ````
 
-Change to commit 08b11caf. This is the commit that the UWP patches (see below) are based on. You can use a different commit but the patches might not apply correctly.
+Change to the branch-heads/3987 branch. This is the commit that the UWP patches (see below) are based on. You can use a different commit but the patches might not apply correctly.
 
 ```shell
 cd src
-git checkout 08b11cafae02834dedb3230321c5f2c775febca2
+git checkout branch-heads/3987
 ```
 
 Instruct the tools to bring the bits from all the sub repositories to your dev box. This will take awhile.
@@ -169,7 +197,7 @@ ninja -C out\msvc\x64\Release
 
 # Consuming the generated binaries
 
-You'll need to set 4 pieces of configuration on your application for consuming this patched version of WebRTC. You'll find these information in the **webrtc.ninja** file inside the **out\msvc\x64\Release\obj** folder.
+You'll need to set 5 pieces of configuration on your application for consuming this patched version of WebRTC. You'll find these information in the **webrtc.ninja** file inside the **out\msvc\x64\Release\obj** folder.
 
 > The following instructions should work for Release builds on x64. For Debug builds and x86 builds you should harvest similar information from the webrtc.ninja file placed on its respective **obj** directory.
 
@@ -194,42 +222,7 @@ Click on **Apply**, but don't close the project properties window.
 Click on **Preprocessor** → **Preprocessor Definitions** and **add** the following definitions:
 
 ```
-USE_AURA=1
-_HAS_EXCEPTIONS=0
-__STD_C
-_CRT_RAND_S
-_CRT_SECURE_NO_DEPRECATE
-_SCL_SECURE_NO_DEPRECATE
-_ATL_NO_OPENGL
-_WINDOWS
-CERT_CHAIN_PARA_HAS_EXTRA_FIELDS
-PSAPI_VERSION=2
-WIN32
-_SECURE_ATL
-_USING_V110_SDK71_
-WINUWP
-__WRL_NO_DEFAULT_LIB__
-WINAPI_FAMILY=WINAPI_FAMILY_PC_APP
-WIN10=_WIN32_WINNT_WIN10
-WIN32_LEAN_AND_MEAN
-NOMINMAX
-_UNICODE
-UNICODE
-NTDDI_VERSION=NTDDI_WIN10_RS2
-_WIN32_WINNT=0x0A00
-WINVER=0x0A00
-NVALGRIND
-DYNAMIC_ANNOTATIONS_ENABLED=0
-WEBRTC_ENABLE_PROTOBUF=1
-WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
-RTC_ENABLE_VP9
-HAVE_SCTP
-WEBRTC_LIBRARY_IMPL
-WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0
-WEBRTC_WIN
-ABSL_ALLOCATOR_NOTHROW=1
-GOOGLE_PROTOBUF_NO_RTTI
-GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
+USE_AURA=1;_HAS_EXCEPTIONS=0;__STD_C;_CRT_RAND_S;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_ATL_NO_OPENGL;_WINDOWS;CERT_CHAIN_PARA_HAS_EXTRA_FIELDS;PSAPI_VERSION=2;WIN32;_SECURE_ATL;_USING_V110_SDK71_;WINUWP;__WRL_NO_DEFAULT_LIB__;WINAPI_FAMILY=WINAPI_FAMILY_PC_APP;WIN10=_WIN32_WINNT_WIN10;WIN32_LEAN_AND_MEAN;NOMINMAX;_UNICODE;UNICODE;NTDDI_VERSION=NTDDI_WIN10_RS2;_WIN32_WINNT=0x0A00;WINVER=0x0A00;NVALGRIND;DYNAMIC_ANNOTATIONS_ENABLED=0;WEBRTC_ENABLE_PROTOBUF=1;WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE;RTC_ENABLE_VP9;HAVE_SCTP;WEBRTC_LIBRARY_IMPL;WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0;WEBRTC_WIN;ABSL_ALLOCATOR_NOTHROW=1;GOOGLE_PROTOBUF_NO_RTTI;GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
 ```
 
 Click on **Apply**, but don't close the project properties window.
@@ -251,5 +244,13 @@ Click on **Input** → **Additional Dependencies** and **add** the following fil
 ```
 webrtc.lib
 ```
+
+5. Discarding libcmt from the linking
+
+Still on the **Input** tab, click on **Ignore Specific Default Libraries** and add **libcmt**.
+
+> It should be libcmtd on debug builds.
+
+# Victory
 
 Click on **OK** and you should be good to use WebRTC APIs on your UWP app! :)
