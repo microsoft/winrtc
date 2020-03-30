@@ -41,7 +41,7 @@ git checkout chrome/3987
 git fetch
 ```
 
-depot_tools has some tools that are not part of the repo and need to be downloaded. Let's download these extra tools.
+depot_tools has some tools that are not part of the repo and need to be downloaded. Let's download these extra tools. This might take a few minutes.
 
 ```shell
 gclient
@@ -119,7 +119,7 @@ Tell to the gclient tool to initialize your local copy of the repos.
 gclient
 ```
 
-Request the tools to fetch the WebRTC code base.
+Request the tools to fetch the WebRTC code base. The following command will take time. Past experience shows that it might take around 1 hour an 10 minutes. 
 
 ```shell
 fetch --nohooks --no-history webrtc
@@ -225,6 +225,8 @@ Click on **Preprocessor** → **Preprocessor Definitions** and **add** the follo
 USE_AURA=1;_HAS_EXCEPTIONS=0;__STD_C;_CRT_RAND_S;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_ATL_NO_OPENGL;_WINDOWS;CERT_CHAIN_PARA_HAS_EXTRA_FIELDS;PSAPI_VERSION=2;WIN32;_SECURE_ATL;_USING_V110_SDK71_;WINUWP;__WRL_NO_DEFAULT_LIB__;WINAPI_FAMILY=WINAPI_FAMILY_PC_APP;WIN10=_WIN32_WINNT_WIN10;WIN32_LEAN_AND_MEAN;NOMINMAX;_UNICODE;UNICODE;NTDDI_VERSION=NTDDI_WIN10_RS2;_WIN32_WINNT=0x0A00;WINVER=0x0A00;NVALGRIND;DYNAMIC_ANNOTATIONS_ENABLED=0;WEBRTC_ENABLE_PROTOBUF=1;WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE;RTC_ENABLE_VP9;HAVE_SCTP;WEBRTC_LIBRARY_IMPL;WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0;WEBRTC_WIN;ABSL_ALLOCATOR_NOTHROW=1;GOOGLE_PROTOBUF_NO_RTTI;GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER
 ```
 
+> Feel free to copy-and-paste with the semicolons in a single line. Visual Studio will expand them to multiple lines next time you open this UI.
+
 Click on **Apply**, but don't close the project properties window.
 
 3. Linker additional library path
@@ -249,7 +251,7 @@ webrtc.lib
 
 Still on the **Input** tab, click on **Ignore Specific Default Libraries** and add **libcmt**.
 
-> It should be libcmtd on debug builds.
+> It should be libcmt**d** on debug builds.
 
 # Victory
 
