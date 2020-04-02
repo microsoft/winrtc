@@ -6,6 +6,7 @@ set PATCH_DIR=%~dp0
 
 pushd %WEBRTCM80_ROOT%\build
 git.exe am "%PATCH_DIR%0000-WebRTC-doesn-t-need-C-CX.patch"
+git.exe am "%PATCH_DIR%T001-Temp-fix-after-VS-2019-update.patch"
 popd
 
 pushd %WEBRTCM80_ROOT%\third_party
