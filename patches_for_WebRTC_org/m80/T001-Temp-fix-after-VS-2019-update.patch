@@ -1,30 +1,13 @@
-From 28a09d70524c18a181c46c8490dc41e7e0bdbab6 Mon Sep 17 00:00:00 2001
+From a6417333a801d90b898b6ddf9af2814a494d9906 Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Thu, 2 Apr 2020 10:47:10 -0700
 Subject: [PATCH] Temp fix after VS 2019 update
 
 ---
- config/win/BUILD.gn              |  5 ++++-
  toolchain/win/setup_toolchain.py |  5 +++++
  vs_toolchain.py                  | 10 ++++++++++
- 3 files changed, 19 insertions(+), 1 deletion(-)
+ 2 files changed, 15 insertions(+)
 
-diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
-index 9a332787c..efff5b0d5 100644
---- a/config/win/BUILD.gn
-+++ b/config/win/BUILD.gn
-@@ -64,7 +64,10 @@ config("compiler") {
-  ]
- 
-   if (is_clang) {
--    cflags += [ "/Zc:twoPhase" ]
-+    cflags += [ 
-+      "/Zc:twoPhase",
-+      "-Wno-microsoft-template",
-+    ]
-   }
- 
-   # Force C/C++ mode for the given GN detected file type. This is necessary
 diff --git a/toolchain/win/setup_toolchain.py b/toolchain/win/setup_toolchain.py
 index 53fac6922..2e465e0c7 100644
 --- a/toolchain/win/setup_toolchain.py
