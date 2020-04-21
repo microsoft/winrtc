@@ -19,9 +19,19 @@ When installed by Visual Studio, the Windows SDK doesn't have the **SDK Debuggin
 
 You'll be running commands in the console. You can use the good old cmd.exe for that, but we do recommend using the [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701?activetab=pivot:reviewstab).
 
-# Acquiring WebRTC code base
+# Opening the developer command prompt
 
-Open the **Windows Terminal** and type the following commands:
+You'll need a command prompt configured for calling Visual Studio tools. The following are two options for opening a developer command prompt:
+
+1. Using the shortcut in the start menu
+
+You can open the shortcut placed in the start menu by Visual Studio installer. You'll find a it clicking on the **Start Menu** → **Visual Studio 2019** → **x64 Native Tools Command Prompt for VS 2019**
+
+2. Executing the batch file with the configuration
+
+We can configure any command prompt with the environment variables for calling VS tools. You just need to call **"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"** from an opened command prompt.
+
+# Acquiring WebRTC code base
 
 ## Getting depot_tools
 
