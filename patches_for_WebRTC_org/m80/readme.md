@@ -27,9 +27,11 @@ You'll need a command prompt configured for calling Visual Studio tools. The fol
 
 You can open the shortcut placed in the start menu by Visual Studio installer. You'll find a it clicking on the **Start Menu** → **Visual Studio 2019** → **x64 Native Tools Command Prompt for VS 2019**
 
+or
+
 2. Executing the batch file with the configuration
 
-We can configure any command prompt with the environment variables for calling VS tools. You just need to call **"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"** from an opened command prompt.
+We can configure any command prompt (like **Windows Terminal**) with the environment variables for calling VS tools. You just need to call **"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"** from an opened command prompt.
 
 # Acquiring WebRTC code base
 
