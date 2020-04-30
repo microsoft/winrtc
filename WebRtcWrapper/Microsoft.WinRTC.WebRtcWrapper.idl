@@ -1,0 +1,422 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.WinRTC.WebRtcWrapper.cricket
+{
+runtimeclass AudioOptions
+{
+  AudioOptions();
+  String ToString();
+};
+} // namespace Microsoft.WinRTC.WebRtcWrapper.cricket
+
+namespace Microsoft.WinRTC.WebRtcWrapper.rtc
+{
+static runtimeclass RTC
+{
+  static void InitializeSSL();
+  static void CleanupSSL();
+};
+
+runtimeclass VideoSinkWants
+{
+  VideoSinkWants();
+  Boolean BlackFrames;
+  Int32 MaxFramerateFps;
+  Int32 MaxPixelCount;
+  Boolean RotationApplied;
+  Int32 TargetPixelCount;
+};
+
+runtimeclass Thread
+{
+  static Thread Create();
+  static Thread CreateWithSocketServer();
+  String Name;
+  Boolean Start();
+};
+
+} // namespace Microsoft.WinRTC.WebRtcWrapper.rtc
+
+namespace Microsoft.WinRTC.WebRtcWrapper.webrtc
+{
+enum PeerConnectionSignalingState
+{
+  Stable,
+  HaveLocalOffer,
+  HaveLocalPrAnswer,
+  HaveRemoteOffer,
+  HaveRemotePrAnswer,
+  Closed,
+};
+
+enum SdpType
+{
+  Offer,
+  PrAnswer,
+  Answer,
+  Rollback,
+};
+
+[default_interface]
+runtimeclass AudioDecoderFactory
+{
+};
+
+[default_interface]
+runtimeclass AudioEncoderFactory
+{
+};
+
+runtimeclass AudioSource
+{
+  Single Volume;
+  Microsoft.WinRTC.WebRtcWrapper.cricket.AudioOptions Options{ get; };
+  void AddSink(AudioTrackSink sink);
+  void RemoveSink(AudioTrackSink sink);
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.AudioSourceOnSetVolumeDelegate OnSetVolume;
+};
+
+[default_interface]
+runtimeclass AudioTrack : MediaStreamTrack
+{
+};
+
+runtimeclass AudioTrackSink
+{
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.AudioTrackSinkOnData OnData;
+};
+
+runtimeclass CreateSessionDescriptionObserver
+{
+  CreateSessionDescriptionObserver();
+
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserverOnSuccessDelegate OnSuccess;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserverOnFailureDelegate OnFailure;
+};
+
+runtimeclass IceCandidate
+{
+  String SdpMid { get; };
+  Int32 SdpMlineIndex{ get; };
+  String ServerUrl{ get; };
+  String ToString{ get; };
+};
+
+unsealed runtimeclass MediaStreamTrack
+{
+  static String AudioKind{ get; };
+  static String VideoKind{ get; };
+  String Kind { get; };
+  String Id{ get; };
+  Boolean Enabled;
+  // FIXME(aurighet): AddOrUpdateSink belongs to VideoTrack
+  void AddOrUpdateSink(VideoSink_VideoFrame sink, Microsoft.WinRTC.WebRtcWrapper.rtc.VideoSinkWants wants);
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.NotifierOnChangedDelegate OnChanged;
+};
+
+[default_interface]
+runtimeclass PeerConnectionDependencies
+{
+  PeerConnectionDependencies(PeerConnectionObserver observer);
+};
+
+runtimeclass PeerConnectionFactory
+{
+  PeerConnectionFactory(Microsoft.WinRTC.WebRtcWrapper.rtc.Thread network_thread, Microsoft.WinRTC.WebRtcWrapper.rtc.Thread worker_thread, Microsoft.WinRTC.WebRtcWrapper.rtc.Thread signaling_thread, AudioEncoderFactory audio_encoder_factory, AudioDecoderFactory audio_decoder_factory, VideoEncoderFactory video_encoder_factory, VideoDecoderFactory video_decoder_factory);
+  AudioSource CreateAudioSource(Microsoft.WinRTC.WebRtcWrapper.cricket.AudioOptions options);
+  AudioTrack CreateAudioTrack(String label, AudioSource audio_source);
+  Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.PeerConnection CreatePeerConnection(Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.RTCConfiguration configuration, PeerConnectionDependencies dependencies);
+  VideoTrack CreateVideoTrack(String label, VideoTrackSource video_source);
+};
+
+runtimeclass PeerConnectionObserver
+{
+  PeerConnectionObserver();
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnIceCandidateDelegate OnIceCandidate;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnIceGatheringChangeDelegate OnIceGatheringChange;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnRenegotiationNeededDelegate OnRenegotiationNeeded;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnSignalingChangeDelegate OnSignalingChange;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnTrackDelegate OnTrack;
+};
+
+runtimeclass RtpReceiver
+{
+  MediaStreamTrack Track { get; };
+};
+
+[default_interface]
+runtimeclass RtpSender
+{
+};
+
+runtimeclass RtpTransceiver
+{
+  RtpReceiver Receiver{ get; };
+};
+
+runtimeclass SessionDescription
+{
+  static String Offer{ get; };
+  static String PrAnswer{ get; };
+  static String Answer{ get; };
+  static String Rollback{ get; };
+
+  SdpType Type{ get; };
+  String ToString();
+};
+
+runtimeclass SetSessionDescriptionObserver
+{
+  SetSessionDescriptionObserver();
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserverOnSuccessDelegate OnSuccess;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserverOnFailureDelegate OnFailure;
+};
+
+[default_interface]
+runtimeclass VideoDecoderFactory
+{
+};
+
+[default_interface]
+runtimeclass VideoEncoderFactory
+{
+};
+
+[default_interface]
+runtimeclass VideoSink_VideoFrame {
+  VideoSink_VideoFrame(Windows.UI.Composition.VisualCollection visual_collection);
+};
+
+[default_interface]
+runtimeclass VideoTrack : MediaStreamTrack
+{
+};
+
+// VideoTrackSource is not a wrapper of a WebRTC object.
+// It is a simplification encompassing the concept of a 
+// video capture as a video track source.
+// FIXME(aurighet): VideoTrackSource has to be refactored.
+[default_interface]
+runtimeclass VideoTrackSource
+{
+  VideoTrackSource();
+};
+
+static runtimeclass WebRTC
+{
+  static AudioDecoderFactory CreateBuiltinAudioDecoderFactory();
+  static AudioEncoderFactory CreateBuiltinAudioEncoderFactory();
+  static VideoDecoderFactory CreateBuiltinVideoDecoderFactory();
+  static VideoEncoderFactory CreateBuiltinVideoEncoderFactory();
+
+  // FIXME(aurighet): SessionDescription should play under C++ move semantics rules.
+  static Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription CreateSessionDescription(SdpType type, String sdp);
+  static Microsoft.WinRTC.WebRtcWrapper.webrtc.IceCandidate CreateIceCandidate(String sdp_mid, Int32 sdp_mline_index, String sdp);
+
+  static SdpType SdpTypeFromString(String type_str);
+  static String SdpTypeToString(SdpType sdp_type);
+};
+
+delegate void AudioSourceOnSetVolumeDelegate(Double volume);
+delegate void AudioTrackSinkOnData(Windows.Storage.Streams.IBuffer audio_data, Int32 bits_per_sample, Int32 sample_rate, UInt32 number_of_channels, UInt32 number_of_frames);
+delegate void CreateSessionDescriptionObserverOnFailureDelegate(String error);
+delegate void CreateSessionDescriptionObserverOnSuccessDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription value);
+delegate void NotifierOnChangedDelegate();
+delegate void PeerConnectionObserverOnIceCandidateDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.IceCandidate value);
+delegate void PeerConnectionObserverOnIceGatheringChangeDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.IceGatheringState value);
+delegate void PeerConnectionObserverOnRenegotiationNeededDelegate();
+delegate void PeerConnectionObserverOnSignalingChangeDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionSignalingState value);
+delegate void PeerConnectionObserverOnTrackDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpTransceiver value);
+delegate void SetSessionDescriptionObserverOnSuccessDelegate();
+delegate void SetSessionDescriptionObserverOnFailureDelegate(String error_message);
+} // Microsoft.WinRTC.WebRtcWrapper.webrtc
+
+namespace Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection
+{
+enum BundlePolicy
+{
+  Balanced,
+  MaxBundle,
+  MaxCompat,
+};
+
+enum IceGatheringState
+{
+  New,
+  Gathering,
+  Complete,
+};
+
+enum IceTransportType
+{
+  None,
+  Relay,
+  NoHost,
+  All,
+};
+
+enum RtcpMuxPolicy
+{
+  Negotiate,
+  Require,
+};
+
+enum SdpSemantics
+{
+  PlanB,
+  UnifiedPlan,
+};
+
+enum TlsCertPolicy
+{
+  Secure,
+  InsecureNoCheck,
+};
+
+runtimeclass IceServer
+{
+  IceServer();
+  IVector<String> Urls;
+  String Username;
+  String Password;
+  TlsCertPolicy TlsCertPolicy;
+  String Hostname;
+  IVector<String> TlsAlpnProtocols;
+  IVector<String> TlsEllipticCurves;
+};
+
+runtimeclass PeerConnection
+{
+  Boolean AddIceCandidate(Microsoft.WinRTC.WebRtcWrapper.webrtc.IceCandidate value);
+  void SetLocalDescription(Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription desc);
+  void SetRemoteDescription(Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription desc);
+  Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpSender AddAudioTrack(Microsoft.WinRTC.WebRtcWrapper.webrtc.AudioTrack /*FIXME*/ track, IVector<String> stream_ids);
+  Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpSender AddVideoTrack(Microsoft.WinRTC.WebRtcWrapper.webrtc.VideoTrack /*FIXME*/ track, IVector<String> stream_ids);
+  void CreateOffer(Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.RTCOfferAnswerOptions options);
+  void CreateAnswer(Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.RTCOfferAnswerOptions options);
+};
+
+runtimeclass RTCConfiguration
+{
+  RTCConfiguration();
+  IVector<IceServer> IceServers;
+  IceTransportType IceTransportType;
+  BundlePolicy BundlePolicy;
+  RtcpMuxPolicy RtcpMuxPolicy;
+  Int32 IceCandidatePoolSize;
+  SdpSemantics SdpSemantics;
+};
+
+runtimeclass RTCOfferAnswerOptions
+{
+  RTCOfferAnswerOptions();
+  Boolean VoiceActivityDetection;
+  Boolean IceRestart;
+  Boolean UseRtpMux;
+  Boolean RawPacketizationForVideo;
+  Int32 NumSimulcastLayers;
+  Boolean UseObsoleteSctpSdp;
+};
+} // Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection
+
+namespace Microsoft.WinRTC.WebRtcWrapper.webrtc
+{
+// The following APIs are in the works.
+enum VideoType
+{
+  Unknown,
+  I420,
+  IYUV,
+  RGB24,
+  ABGR,
+  ARGB,
+  ARGB4444,
+  RGB565,
+  ARGB1555,
+  YUY2,
+  YV12,
+  UYVY,
+  MJPEG,
+  NV21,
+  NV12,
+  BGRA,
+};
+
+// The following APIs are in the works.
+enum VideoRotation
+{
+  VideoRotation_0 = 0,
+  VideoRotation_90 = 90,
+  VideoRotation_180 = 180,
+  VideoRotation_270 = 270,
+};
+
+// The following APIs are in the works.
+struct DeviceIdentification
+{
+  String DeviceName;
+  String DeviceUniqueId;
+  String ProductUniqueId;
+};
+
+// The following APIs are in the works.
+runtimeclass VideoCaptureCapability
+{
+  VideoCaptureCapability();
+  Int32 Width;
+  Int32 Height;
+  Int32 MaxFPS;
+  VideoType VideoType;
+  Boolean Interlaced;
+};
+
+// The following APIs are in the works.
+runtimeclass VideoCaptureModule_DeviceInfo
+{
+  IVector<DeviceIdentification> GetDeviceName{get;};
+  IVector<VideoCaptureCapability> GetCapability(String device_unique_id);
+  VideoCaptureCapability GetBestMatchedCapability(String device_unique_id, VideoCaptureCapability requested);
+  VideoRotation GetOrientation(String device_unique_id);
+};
+
+// The following APIs are in the works.
+runtimeclass VideoCaptureModule
+{
+  void StartCapture(VideoCaptureCapability capability);
+  void StopCapture();
+};
+
+// The following APIs are in the works.
+static runtimeclass VideoCaptureFactory
+{
+  static VideoCaptureModule Create(String device_unique_id);
+  static VideoCaptureModule_DeviceInfo CreateDeviceInfo();
+};
+
+}
+
+namespace Microsoft.WinRTC.WebRtcWrapper.webrtc.VideoFrame
+{
+
+// The following APIs are in the works.
+runtimeclass Builder
+{
+  Builder();
+
+  VideoFrame Build();
+  Builder SetTimestampMs(Int64 timestamp_ms);
+  Builder SetTimestampUs(Int64 timestamp_us);
+  Builder SetTimestampRtp(UInt32 timestamp_rtp);
+  Builder SetNtpTimeMs(Int64 ntp_time_ms);
+  Builder SetId(UInt16 id);
+};
+
+// The following APIs are in the works.
+unsealed runtimeclass VideoFrame
+{
+  Int32 Width{ get; };
+  Int32 Height{ get; };
+  UInt32 Size{ get; };
+};
+} // namespace Microsoft.WinRTC.WebRtcWrapper.webrtc.VideoFrame
