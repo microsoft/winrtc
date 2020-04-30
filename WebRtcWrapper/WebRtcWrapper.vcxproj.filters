@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>accd3aa8-1ba0-4223-9bbe-0c431709210b</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{926ab91d-31b4-48c3-b9a4-e681349f27f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="InTheWorks">
+      <UniqueIdentifier>{0bffb185-24b0-4cd0-b8f8-ef7f36840110}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers">
+      <UniqueIdentifier>{b6da9a87-6e65-49c7-ba05-796166a0502a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="rtc.RTC.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="rtc.Thread.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoCaptureCapability.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoCaptureFactory.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoCaptureModule.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoCaptureModule_DeviceInfo.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoFrame.Builder.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoFrame.VideoFrame.cpp">
+      <Filter>InTheWorks</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.AudioDecoderFactory.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.AudioEncoderFactory.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoDecoderFactory.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoEncoderFactory.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnectionFactory.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnection.RTCConfiguration.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnection.IceServer.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnectionObserver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.IceCandidate.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.RtpTransceiver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.RtpReceiver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.MediaStreamTrack.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoSink_VideoFrame.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnectionDependencies.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.SetSessionDescriptionObserver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cricket.AudioOptions.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="rtc.VideoSinkWants.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoTrackSource.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.CreateSessionDescriptionObserver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnection.RTCOfferAnswerOptions.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.SessionDescription.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.AudioSource.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.AudioTrackSink.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.AudioTrack.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.RtpSender.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.PeerConnection.PeerConnection.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.WebRTC.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.VideoTrack.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="rtc.RTC.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="rtc.Thread.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoCaptureCapability.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoCaptureFactory.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoCaptureModule.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoCaptureModule_DeviceInfo.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoFrame.Builder.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoFrame.VideoFrame.h">
+      <Filter>InTheWorks</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.AudioDecoderFactory.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.AudioEncoderFactory.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoDecoderFactory.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoEncoderFactory.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnectionFactory.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnection.RTCConfiguration.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnection.IceServer.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnectionObserver.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.IceCandidate.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.RtpTransceiver.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.RtpReceiver.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.MediaStreamTrack.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoSink_VideoFrame.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnectionDependencies.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.SetSessionDescriptionObserver.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="cricket.AudioOptions.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="rtc.VideoSinkWants.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoTrackSource.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.CreateSessionDescriptionObserver.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnection.RTCOfferAnswerOptions.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.SessionDescription.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.AudioSource.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.AudioTrackSink.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.AudioTrack.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.RtpSender.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.PeerConnection.PeerConnection.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.WebRTC.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoTrack.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WebRtcWrapper.def" />
+    <None Include="packages.config" />
+    <None Include=".clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Microsoft.WinRTC.WebRtcWrapper.idl">
+      <Filter>Wrappers</Filter>
+    </Midl>
+  </ItemGroup>
+</Project>

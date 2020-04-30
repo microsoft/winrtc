@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.WinRTC.libwebrtc.80.0.11-alpha\build\native\Microsoft.WinRTC.libwebrtc.props" Condition="Exists('..\packages\Microsoft.WinRTC.libwebrtc.80.0.11-alpha\build\native\Microsoft.WinRTC.libwebrtc.props')" />
+  <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <PropertyGroup Label="Globals">
+    <CppWinRTOptimized>true</CppWinRTOptimized>
+    <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
+    <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
+    <MinimalCoreWin>true</MinimalCoreWin>
+    <ProjectGuid>{7ee6e284-7878-4c68-bfa0-2d4728572906}</ProjectGuid>
+    <ProjectName>WebRtcWrapper</ProjectName>
+    <RootNamespace>Microsoft.WinRTC.WebRtcWrapper</RootNamespace>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <CppWinRTProjectLanguage>C++/WinRT</CppWinRTProjectLanguage>
+    <CppWinRTModernIDL>true</CppWinRTModernIDL>
+    <CppWinRTUsePrefixes>true</CppWinRTUsePrefixes>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <!-- Import Project="PropertySheet.props" / -->
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
+      <WarningLevel>Level4</WarningLevel>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <!--Temporarily disable cppwinrt heap enforcement to work around xaml compiler generated std::shared_ptr use -->
+      <AdditionalOptions Condition="'$(CppWinRTHeapEnforcement)'==''">/DWINRT_NO_MAKE_DETECTION %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINRT_DLL;WIN32_LEAN_AND_MEAN;WINRT_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <ModuleDefinitionFile>WebRtcWrapper.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="webrtc.AudioDecoderFactory.h" />
+    <ClInclude Include="webrtc.AudioEncoderFactory.h" />
+    <ClInclude Include="cricket.AudioOptions.h" />
+    <ClInclude Include="webrtc.IceCandidate.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="rtc.RTC.h" />
+    <ClInclude Include="rtc.VideoSinkWants.h" />
+    <ClInclude Include="webrtc.AudioTrackSink.h" />
+    <ClInclude Include="webrtc.RtpTransceiver.h" />
+    <ClInclude Include="rtc.Thread.h" />
+    <ClInclude Include="webrtc.VideoDecoderFactory.h" />
+    <ClInclude Include="webrtc.VideoEncoderFactory.h" />
+    <ClInclude Include="webrtc.AudioSource.h" />
+    <ClInclude Include="webrtc.AudioTrack.h" />
+    <ClInclude Include="webrtc.CreateSessionDescriptionObserver.h" />
+    <ClInclude Include="webrtc.VideoCaptureCapability.h" />
+    <ClInclude Include="webrtc.VideoCaptureFactory.h" />
+    <ClInclude Include="webrtc.VideoCaptureModule.h" />
+    <ClInclude Include="webrtc.VideoCaptureModule_DeviceInfo.h" />
+    <ClInclude Include="webrtc.WebRTC.h" />
+    <ClInclude Include="webrtc.MediaStreamTrack.h" />
+    <ClInclude Include="webrtc.PeerConnection.IceServer.h" />
+    <ClInclude Include="webrtc.PeerConnection.PeerConnection.h" />
+    <ClInclude Include="webrtc.PeerConnection.RTCConfiguration.h" />
+    <ClInclude Include="webrtc.PeerConnection.RTCOfferAnswerOptions.h" />
+    <ClInclude Include="webrtc.PeerConnectionDependencies.h" />
+    <ClInclude Include="webrtc.PeerConnectionFactory.h" />
+    <ClInclude Include="webrtc.PeerConnectionObserver.h" />
+    <ClInclude Include="webrtc.RtpReceiver.h" />
+    <ClInclude Include="webrtc.RtpSender.h" />
+    <ClInclude Include="webrtc.SessionDescription.h" />
+    <ClInclude Include="webrtc.SetSessionDescriptionObserver.h" />
+    <ClInclude Include="webrtc.VideoFrame.Builder.h" />
+    <ClInclude Include="webrtc.VideoFrame.VideoFrame.h" />
+    <ClInclude Include="webrtc.VideoTrack.h" />
+    <ClInclude Include="webrtc.VideoTrackSource.h" />
+    <ClInclude Include="webrtc.VideoSink_VideoFrame.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="webrtc.AudioDecoderFactory.cpp" />
+    <ClCompile Include="webrtc.AudioEncoderFactory.cpp" />
+    <ClCompile Include="cricket.AudioOptions.cpp" />
+    <ClCompile Include="webrtc.IceCandidate.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="rtc.RTC.cpp" />
+    <ClCompile Include="rtc.VideoSinkWants.cpp" />
+    <ClCompile Include="webrtc.AudioTrackSink.cpp" />
+    <ClCompile Include="webrtc.RtpTransceiver.cpp" />
+    <ClCompile Include="rtc.Thread.cpp" />
+    <ClCompile Include="webrtc.VideoDecoderFactory.cpp" />
+    <ClCompile Include="webrtc.VideoEncoderFactory.cpp" />
+    <ClCompile Include="webrtc.AudioSource.cpp" />
+    <ClCompile Include="webrtc.AudioTrack.cpp" />
+    <ClCompile Include="webrtc.VideoCaptureCapability.cpp" />
+    <ClCompile Include="webrtc.VideoCaptureFactory.cpp" />
+    <ClCompile Include="webrtc.VideoCaptureModule.cpp" />
+    <ClCompile Include="webrtc.VideoCaptureModule_DeviceInfo.cpp" />
+    <ClCompile Include="webrtc.WebRTC.cpp" />
+    <ClCompile Include="webrtc.CreateSessionDescriptionObserver.cpp" />
+    <ClCompile Include="webrtc.MediaStreamTrack.cpp" />
+    <ClCompile Include="webrtc.PeerConnection.IceServer.cpp" />
+    <ClCompile Include="webrtc.PeerConnection.PeerConnection.cpp" />
+    <ClCompile Include="webrtc.PeerConnection.RTCConfiguration.cpp" />
+    <ClCompile Include="webrtc.PeerConnection.RTCOfferAnswerOptions.cpp" />
+    <ClCompile Include="webrtc.PeerConnectionDependencies.cpp" />
+    <ClCompile Include="webrtc.PeerConnectionFactory.cpp" />
+    <ClCompile Include="webrtc.PeerConnectionObserver.cpp" />
+    <ClCompile Include="webrtc.RtpReceiver.cpp" />
+    <ClCompile Include="webrtc.RtpSender.cpp" />
+    <ClCompile Include="webrtc.SessionDescription.cpp" />
+    <ClCompile Include="webrtc.SetSessionDescriptionObserver.cpp" />
+    <ClCompile Include="webrtc.VideoFrame.Builder.cpp" />
+    <ClCompile Include="webrtc.VideoFrame.VideoFrame.cpp" />
+    <ClCompile Include="webrtc.VideoTrack.cpp" />
+    <ClCompile Include="webrtc.VideoTrackSource.cpp" />
+    <ClCompile Include="webrtc.VideoSink_VideoFrame.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".clang-format" />
+    <None Include="packages.config" />
+    <None Include="WebRtcWrapper.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Microsoft.WinRTC.WebRtcWrapper.idl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets" Condition="Exists('..\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.WinRTC.libwebrtc.80.0.11-alpha\build\native\Microsoft.WinRTC.libwebrtc.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.WinRTC.libwebrtc.80.0.11-alpha\build\native\Microsoft.WinRTC.libwebrtc.props'))" />
+  </Target>
+</Project>
