@@ -4,7 +4,7 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 # Goodies
 
-## Pathcing WebRTC M80
+## Patching WebRTC M80
 
 At this moment, you'll find the patch files required for building WebRTC for modern Windows. As is, the WebRTC code base has a Win32 port that doesn't build for UWP. You'll able to build a recent version of WebRTC with the patches available by this repo.
 
