@@ -1,0 +1,34 @@
+environment:
+  host:
+    os: windows
+    flavor: server
+    version: 2019
+  runtime:
+    provider: appcontainer
+    image: 'cdpxwinrs5.azurecr.io/global/vse2019:latest'
+    source_mode: map
+
+version:
+  name: 'WinRTC'
+  major: 1
+  minor: 0
+
+restore:
+  commands:
+    - !!defaultcommand
+      name: 'Getting depot'
+      command: '.pipelines\restore-acquiring_code.cmd'
+    - !!defaultcommand
+      name: 'Applying patches'
+      command: '.pipelines\restore-applying_patches.cmd'
+
+build:
+  commands:
+    - !!buildcommand
+      name: 'Build WebRTC'
+      command: '.pipelines\build.cmd'
+      artifacts:
+        - from: 'output'
+          to: 'out'
+          include: 
+            - '**/*'
