@@ -17,6 +17,11 @@ popd
 
 pushd %WEBRTCM80_ROOT%\third_party\boringssl\src
 git.exe am "%PATCH_DIR%0003-Replacing-deprecated-and-non-UWP-supported-RtlGenRan.patch"
+git.exe am "%PATCH_DIR%6401-Arm64-is-a-thing-and-has-intrinsic-to-mul-two-64bit-.patch"
+popd
+
+pushd %WEBRTCM80_ROOT%\third_party\libjpeg_turbo
+git.exe am "%PATCH_DIR%6401-cl-aligns-differently-and-hack-for-extracting-first-.patch"
 popd
 
 pushd %WEBRTCM80_ROOT%
@@ -25,4 +30,5 @@ git.exe am "%PATCH_DIR%0005-Fixing-UWP-build-for-time_utils.cc.patch"
 git.exe am "%PATCH_DIR%0006-Fixing-UWP-build-for-file_rotating_stream.cc.patch"
 git.exe am "%PATCH_DIR%0007-Fixing-UWP-build-for-modules-video_capture.patch"
 git.exe am "%PATCH_DIR%0008-Fixing-UWP-build-for-modules-audio_device.patch"
+git.exe am "%PATCH_DIR%6401-Shift-operator-in-Arm-doesn-t-work-the-same-as-Intel.patch"
 popd
