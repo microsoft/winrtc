@@ -9,6 +9,12 @@ c:
 cd c:\webrtc\src
 if errorlevel 1 goto :error
 
+REM Setting the vs developer environment
+echo.
+echo Opening the developer command prompt...
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64
+if errorlevel 1 goto :error
+
 REM Setting up
 echo.
 echo Excluding the unnecessary modules and prepares to build the drop for UWP...
