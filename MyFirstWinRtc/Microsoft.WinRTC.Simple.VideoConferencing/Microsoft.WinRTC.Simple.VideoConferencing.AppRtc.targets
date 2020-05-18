@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+!-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WinRtc-Platform Condition="'$(Platform)' == 'Win32'">x86</WinRtc-Platform>
+    <WinRtc-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</WinRtc-Platform>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'UAP'">
+    <Reference Include="$(MSBuildThisFileDirectory)..\..\lib\uap10.0\Microsoft.WinRTC.Simple.VideoConferencing.winmd">
+      <Implementation>Microsoft.WinRTC.Simple.VideoConferencing.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win10-$(WinRtc-Platform)\native\Microsoft.WinRTC.Simple.VideoConferencing.dll" />
+  </ItemGroup>
+</Project>
