@@ -1,0 +1,246 @@
+From 7258067abf605d82dd7648b60d71da9a821150bd Mon Sep 17 00:00:00 2001
+From: Augusto Cesar Righetto <augustorighetto@outlook.com>
+Date: Fri, 8 May 2020 16:33:30 -0700
+Subject: [PATCH] BUG: Requested camera settings were not being honored by the
+ camera capture module
+
+---
+ .../windows/device_info_winrt.cc              | 66 +++++++++----------
+ .../windows/help_functions_winrt.cc           |  4 +-
+ .../windows/video_capture_winrt.cc            | 17 ++---
+ 3 files changed, 40 insertions(+), 47 deletions(-)
+
+diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
+index 5e330ba1af..3b2a7aa773 100644
+--- a/modules/video_capture/windows/device_info_winrt.cc
++++ b/modules/video_capture/windows/device_info_winrt.cc
+@@ -90,43 +90,53 @@ struct DeviceInfoWinRTInternal {
+   HRESULT GetDeviceInformationCollection(
+       IVectorView<DeviceInformation*>** device_collection);
+ 
++  HRESULT AssureDeviceInformation();
++
+   RoInitializeWrapper ro_initialize_wrapper_;
+   ComPtr<IDeviceInformationStatics> device_info_statics_;
+ };
+ 
++HRESULT DeviceInfoWinRTInternal::AssureDeviceInformation() {
++  HRESULT hr = S_OK;
++
++  if (!device_info_statics_) {
++    // Get the object containing the DeviceInformation static methods.
++    THR(GetActivationFactory(
++        HStringReference(
++            RuntimeClass_Windows_Devices_Enumeration_DeviceInformation)
++            .Get(),
++        &device_info_statics_));
++  }
++
++Cleanup:
++  return hr;
++}
++
+ DeviceInfoWinRTInternal::DeviceInfoWinRTInternal()
+     : ro_initialize_wrapper_(RO_INIT_MULTITHREADED) {}
+ 
+ HRESULT DeviceInfoWinRTInternal::Init() {
+   HRESULT hr;
+ 
+-  // Checks if Windows runtime initialized successfully.
+-  // Pay attention if ro_initialize_wrapper_ is returning RPC_E_CHANGED_MODE.
+-  // It means device_info_winrt is being called from an apartment thread (STA)
+-  // instead of multithreaded (MTA). Usually this means device_info_winrt is
+-  // being called from the UI thread.
+-  THR((HRESULT)ro_initialize_wrapper_);
+-
+-  // Get the object containing the DeviceInformation static methods.
+-  THR(GetActivationFactory(
+-      HStringReference(
+-          RuntimeClass_Windows_Devices_Enumeration_DeviceInformation)
+-          .Get(),
+-      &device_info_statics_));
++  THR(AssureInitialized());
+ 
+ Cleanup:
+   return hr;
+ }
+ 
++// Some sample apps don't call DeviceInfoImpl::Init before using the class.
++// All public methods of this class should assure its initialization.
+ HRESULT DeviceInfoWinRTInternal::AssureInitialized() {
+   HRESULT hr = S_OK;
+ 
+-  // Some sample apps don't call DeviceInfoImpl::Init before using the class.
+-  // All public methods of this class should assure its initialization.
+-  if (FAILED(ro_initialize_wrapper_) || !device_info_statics_.Get()) {
+-    RTC_LOG(LS_INFO) << "DeviceInfoWinRT wasn't initialized. Initializing.";
+-    THR(Init());
+-  }
++  // Checks if Windows runtime initialized successfully.
++  // Pay attention if ro_initialize_wrapper_ is returning RPC_E_CHANGED_MODE.
++  // It means device_info_winrt is being called from an apartment thread (STA)
++  // instead of multithreaded (MTA). Usually this means device_info_winrt is
++  // being called from the UI thread.
++  THR((HRESULT)ro_initialize_wrapper_);
++
++  THR(AssureDeviceInformation());
+ 
+ Cleanup:
+   return hr;
+@@ -271,8 +281,6 @@ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+     const wchar_t* device_unique_id,
+     vector<VideoCaptureCapability>* video_capture_capabilities) {
+   HRESULT hr;
+-  ComPtr<IAsyncOperation<DeviceInformation*>> async_op_device_information;
+-  ComPtr<IDeviceInformation> device_info;
+   ComPtr<IMediaCaptureInitializationSettings> init_settings;
+   ComPtr<IMediaCaptureInitializationSettings5> init_settings5;
+   ComPtr<IMediaCapture> media_capture;
+@@ -290,18 +298,6 @@ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+   // Assures class has been properly initialized.
+   THR(AssureInitialized());
+ 
+-  // Calls FindAllAsync and then start the async operation.
+-  THR(device_info_statics_->CreateFromIdAsync(device_id.Get(),
+-                                              &async_op_device_information));
+-
+-  // Blocks and suspends thread until the async operation finishes or
+-  // timeouts. Timeout is taked as failure.
+-  THR(WaitForAsyncOperation(async_op_device_information));
+-
+-  // Gathers device information.
+-  THR(async_op_device_information->GetResults(&device_info));
+-
+-  //
+   THR(ActivateInstance(
+       HStringReference(
+           RuntimeClass_Windows_Media_Capture_MediaCaptureInitializationSettings)
+@@ -310,8 +306,6 @@ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+   THR(init_settings.As<IMediaCaptureInitializationSettings5>(&init_settings5));
+   THR(init_settings5->put_MemoryPreference(
+       MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu));
+-  THR(init_settings->put_StreamingCaptureMode(
+-      StreamingCaptureMode::StreamingCaptureMode_Video));
+   THR(init_settings->put_VideoDeviceId(device_id.Get()));
+ 
+   THR(ActivateInstance(
+@@ -320,6 +314,7 @@ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+ 
+   THR(media_capture->InitializeWithSettingsAsync(init_settings.Get(),
+                                                  &async_action));
++
+   THR(WaitForAsyncAction(async_action));
+ 
+   THR(media_capture->get_VideoDeviceController(&video_device_controller));
+@@ -363,6 +358,7 @@ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+   THR(media_capture.As<IClosable>(&media_capture_closable));
+   THR(media_capture_closable->Close());
+ 
++  // All media calls succeeded, let's copy the results.
+   video_capture_capabilities->swap(device_caps);
+ 
+ Cleanup:
+diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
+index 0271bffd3e..709c685b26 100644
+--- a/modules/video_capture/windows/help_functions_winrt.cc
++++ b/modules/video_capture/windows/help_functions_winrt.cc
+@@ -10,8 +10,10 @@
+ 
+ #include "modules/video_capture/windows/help_functions_winrt.h"
+ 
++using ABI::Windows::Foundation::AsyncStatus;
+ using ABI::Windows::Foundation::IAsyncAction;
+ using ABI::Windows::Foundation::IAsyncActionCompletedHandler;
++using ABI::Windows::Foundation::IAsyncInfo;
+ using ABI::Windows::Media::MediaProperties::IMediaRatio;
+ using Microsoft::WRL::Callback;
+ using Microsoft::WRL::ComPtr;
+@@ -88,7 +90,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+   event_completed =
+       Event(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
+                           WRITE_OWNER | EVENT_ALL_ACCESS));
+-  THR(event_completed.IsValid() ? S_OK : E_HANDLE);
++  THR(event_completed.IsValid() ? S_OK : HRESULT_FROM_WIN32(GetLastError()));
+ 
+   // Defines the callback that will signal the event to unblock and resume.
+   THR(async_action->put_Completed(
+diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
+index 86fbe524a3..5aa3541b34 100644
+--- a/modules/video_capture/windows/video_capture_winrt.cc
++++ b/modules/video_capture/windows/video_capture_winrt.cc
+@@ -166,8 +166,6 @@ HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
+   THR(settings.As(&settings5));
+   THR(settings5->put_MemoryPreference(
+       MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu));
+-  THR(settings->put_StreamingCaptureMode(
+-      StreamingCaptureMode::StreamingCaptureMode_Video));
+   THR(settings->put_VideoDeviceId(device_id.Get()));
+ 
+   THR(media_capture_->InitializeWithSettingsAsync(settings.Get(),
+@@ -185,7 +183,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+   ComPtr<IMediaCapture5> media_capture5;
+   ComPtr<IMapView<HSTRING, MediaFrameSource*>> frame_sources;
+   ComPtr<IIterable<IKeyValuePair<HSTRING, MediaFrameSource*>*>> iterable;
+-  ComPtr<IIterator<IKeyValuePair<HSTRING, MediaFrameSource*>*>> iterator;
++  ComPtr<IIterator<IKeyValuePair<HSTRING, MediaFrameSource*>*>> frame_source_iterator;
+   ComPtr<IAsyncOperation<MediaFrameReader*>> async_operation;
+   ComPtr<IAsyncOperation<MediaFrameReaderStartStatus>>
+       async_media_frame_reader_start_status;
+@@ -195,8 +193,8 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+   THR(media_capture_.As(&media_capture5));
+   THR(media_capture5->get_FrameSources(&frame_sources));
+   THR(frame_sources.As(&iterable));
+-  THR(iterable->First(&iterator));
+-  THR(iterator->get_HasCurrent(&has_current));
++  THR(iterable->First(&frame_source_iterator));
++  THR(frame_source_iterator->get_HasCurrent(&has_current));
+ 
+   while (has_current) {
+     ComPtr<IKeyValuePair<HSTRING, MediaFrameSource*>> key_value;
+@@ -210,7 +208,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+     unsigned int supported_formats_count;
+     UINT32 frame_width, frame_height;
+ 
+-    THR(iterator->get_Current(&key_value));
++    THR(frame_source_iterator->get_Current(&key_value));
+     THR(key_value->get_Value(&value));
+ 
+     // Filters out frame sources other than color video cameras.
+@@ -220,7 +218,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+     if ((media_stream_type != MediaStreamType::MediaStreamType_VideoRecord) ||
+         (media_frame_source_kind !=
+          MediaFrameSourceKind::MediaFrameSourceKind_Color)) {
+-      THR(iterator->MoveNext(&has_current));
++      THR(frame_source_iterator->MoveNext(&has_current));
+       continue;
+     }
+ 
+@@ -241,7 +239,6 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+       if (video_type != capability.videoType &&
+           video_type != VideoType::kI420 && video_type != VideoType::kYUY2 &&
+           video_type != VideoType::kYV12) {
+-        THR(iterator->MoveNext(&has_current));
+         continue;
+       }
+ 
+@@ -252,16 +249,14 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+       THR(video_media_frame_format->get_Height(&frame_height));
+       if ((frame_width != static_cast<UINT32>(capability.width)) ||
+           (frame_height != static_cast<UINT32>(capability.height))) {
+-        THR(iterator->MoveNext(&has_current));
+         continue;
+       }
+ 
+-      // Filters os frames sources with frame rate higher than the what is
++      // Filters out frames sources with frame rate higher than the what is
+       // requested by the capabilities.
+       THR(media_frame_format->get_FrameRate(&media_ratio));
+       if (SafelyComputeMediaRatio(media_ratio.Get()) >
+           static_cast<uint32_t>(capability.maxFPS)) {
+-        THR(iterator->MoveNext(&has_current));
+         continue;
+       }
+ 
+-- 
+2.21.0.windows.1
+
