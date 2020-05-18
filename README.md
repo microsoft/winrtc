@@ -18,7 +18,13 @@ We're in our earlier stages, stay tuned because we're going to be developing thi
 
 The `WebRtcWrapper` folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. We're working on NuGet packages for these wrappers. It takes more than a .nuspec file to have binary code shipped in a NuGet package.
 
-This is a work in progress and we'd love to hear from you.
+This is a work in progress, and we would love to hear from you.
+
+## Sample code for building a Xaml component
+
+The MyFirstWinRtc folder contains sample code of a Xaml component and an UWP app using the WinRt/C++ projection. This sample code uses https://appr.tc as signaling, network traversal and another peer to connect with. The code is in this folder is for educational purposes only.
+
+This is a work in progress, and we would love to hear from you.
 
 # Contributing
 
