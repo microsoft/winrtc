@@ -1,0 +1,26 @@
+﻿<UserControl
+    x:Class="Microsoft.WinRtc.Simple.VideoConferencing.AppRtcControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.WinRtc.Simple.VideoConferencing"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="Root">
+        
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            
+            <ProgressRing IsActive="True" Width="80" Height="80" Margin="0,40" />
+            
+            <TextBlock FontSize="28">Waiting for Peer...</TextBlock>
+        </StackPanel>
+        
+        <Canvas x:Name="Canvas" />
+        
+        <CommandBar DefaultLabelPosition="Right" VerticalAlignment="Bottom">
+
+            <AppBarButton x:Name="Button" Click="AppRTCButton_Click" Icon="Account" Label="{x:Bind Room}" />
+        </CommandBar>
+    </Grid>
+</UserControl>

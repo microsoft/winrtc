@@ -1,0 +1,20 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.WinRtc.Simple.VideoConferencing
+{
+runtimeclass AppRtc
+{
+  AppRtc();
+  String Room{ get; };
+  Windows.Foundation.IAsyncAction Init(Windows.UI.Xaml.UIElement canvas, String room);
+}
+
+[default_interface]
+runtimeclass AppRtcControl : Windows.UI.Xaml.Controls.UserControl
+{
+  AppRtcControl();
+  String Room;
+}
+} // namespace Microsoft.WinRtc.Simple.VideoConferencing
+

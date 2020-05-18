@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29728.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyFirstWinRtc", "MyFirstWinRtc\MyFirstWinRtc.vcxproj", "{462886F9-712B-4762-8310-62DD0978D9F4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.WinRtc.Simple.VideoConferencing", "Microsoft.WinRTC.Simple.VideoConferencing\Microsoft.WinRTC.Simple.VideoConferencing.vcxproj", "{D2A42464-B4FD-49B9-BE1C-AA75F448546D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM = Release|ARM
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM.ActiveCfg = Debug|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM.Build.0 = Debug|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM.Deploy.0 = Debug|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM64.Build.0 = Debug|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x64.ActiveCfg = Debug|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x64.Build.0 = Debug|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x64.Deploy.0 = Debug|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x86.ActiveCfg = Debug|Win32
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x86.Build.0 = Debug|Win32
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Debug|x86.Deploy.0 = Debug|Win32
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM.ActiveCfg = Release|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM.Build.0 = Release|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM.Deploy.0 = Release|ARM
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM64.ActiveCfg = Release|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM64.Build.0 = Release|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|ARM64.Deploy.0 = Release|ARM64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x64.ActiveCfg = Release|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x64.Build.0 = Release|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x64.Deploy.0 = Release|x64
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x86.ActiveCfg = Release|Win32
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x86.Build.0 = Release|Win32
+		{462886F9-712B-4762-8310-62DD0978D9F4}.Release|x86.Deploy.0 = Release|Win32
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|ARM.ActiveCfg = Debug|ARM
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|ARM.Build.0 = Debug|ARM
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|ARM64.Build.0 = Debug|ARM64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|x64.ActiveCfg = Debug|x64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|x64.Build.0 = Debug|x64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|x86.ActiveCfg = Debug|Win32
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Debug|x86.Build.0 = Debug|Win32
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|ARM.ActiveCfg = Release|ARM
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|ARM.Build.0 = Release|ARM
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|ARM64.ActiveCfg = Release|ARM64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|ARM64.Build.0 = Release|ARM64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|x64.ActiveCfg = Release|x64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|x64.Build.0 = Release|x64
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|x86.ActiveCfg = Release|Win32
+		{D2A42464-B4FD-49B9-BE1C-AA75F448546D}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9412509F-06AE-4F13-B752-F89E0DE71F7B}
+	EndGlobalSection
+EndGlobal
