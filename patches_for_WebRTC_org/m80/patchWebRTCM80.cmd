@@ -29,6 +29,7 @@ git.exe am "%PATCH_DIR%0005-Fixing-UWP-build-for-time_utils.cc.patch"
 git.exe am "%PATCH_DIR%0006-Fixing-UWP-build-for-file_rotating_stream.cc.patch"
 git.exe am "%PATCH_DIR%0007-Fixing-UWP-build-for-modules-video_capture.patch"
 git.exe am "%PATCH_DIR%0007.1-BUG-Requested-camera-settings-were-not-being-honored.patch"
+git.exe am "%PATCH_DIR%0007.2-Properly-handling-async-model-for-initializing-Media.patch"
 git.exe am "%PATCH_DIR%0008-Fixing-UWP-build-for-modules-audio_device.patch"
 git.exe am "%PATCH_DIR%6401-Shift-operator-in-Arm-doesn-t-work-the-same-as-Intel.patch"
 popd
