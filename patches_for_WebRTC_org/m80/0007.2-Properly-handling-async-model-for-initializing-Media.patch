@@ -1,15 +1,16 @@
-From df0d8cdd106d67bc3757cc4ef74c693acec3d5cc Mon Sep 17 00:00:00 2001
+From 8169d726cdc4ef049d6ef64e202e07e3bb58ee3b Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Wed, 27 May 2020 23:38:26 -0700
 Subject: [PATCH] Properly handling async model for initializing MediaCapture
  object
 
+Working around the stride and gap issues with NV12 memory layout
 ---
  .../windows/device_info_winrt.cc              | 178 ++++++----------
  .../windows/help_functions_winrt.cc           | 199 +++++++++++++++++-
  .../windows/help_functions_winrt.h            |  54 ++++-
- .../windows/video_capture_winrt.cc            |  25 +--
- 4 files changed, 308 insertions(+), 148 deletions(-)
+ .../windows/video_capture_winrt.cc            |  61 ++++--
+ 4 files changed, 343 insertions(+), 149 deletions(-)
 
 diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
 index 3b2a7aa773..2a7676be1a 100644
@@ -571,10 +572,18 @@ index 0216d9b0ce..6b81bfc977 100644
      Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncAction>
          async_action);
 diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
-index 5aa3541b34..5cc6154837 100644
+index 5aa3541b34..4a8a597bdf 100644
 --- a/modules/video_capture/windows/video_capture_winrt.cc
 +++ b/modules/video_capture/windows/video_capture_winrt.cc
-@@ -141,9 +141,6 @@ Cleanup:
+@@ -68,6 +68,7 @@ using ABI::Windows::Media::Capture::Frames::MediaFrameReaderStartStatus;
+ using ABI::Windows::Media::Capture::Frames::MediaFrameSource;
+ using ABI::Windows::Media::Capture::Frames::MediaFrameSourceKind;
+ using ABI::Windows::Media::MediaProperties::IMediaRatio;
++using ABI::Windows::Graphics::Imaging::BitmapPlaneDescription;
+ using Microsoft::WRL::Callback;
+ using Microsoft::WRL::ComPtr;
+ using Microsoft::WRL::Wrappers::HString;
+@@ -141,9 +142,6 @@ Cleanup:
  
  HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
    HRESULT hr;
@@ -584,7 +593,7 @@ index 5aa3541b34..5cc6154837 100644
    HStringReference device_id(device_unique_id);
  
    if (media_capture_) {
-@@ -153,24 +150,9 @@ HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
+@@ -153,24 +151,9 @@ HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
      THR(StopCapture() == 0 ? S_OK : E_FAIL);
      THR(closable_media_capture->Close());
    }
@@ -611,7 +620,7 @@ index 5aa3541b34..5cc6154837 100644
  
  Cleanup:
    return hr;
-@@ -183,7 +165,8 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -183,7 +166,8 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
    ComPtr<IMediaCapture5> media_capture5;
    ComPtr<IMapView<HSTRING, MediaFrameSource*>> frame_sources;
    ComPtr<IIterable<IKeyValuePair<HSTRING, MediaFrameSource*>*>> iterable;
@@ -621,6 +630,66 @@ index 5aa3541b34..5cc6154837 100644
    ComPtr<IAsyncOperation<MediaFrameReader*>> async_operation;
    ComPtr<IAsyncOperation<MediaFrameReaderStartStatus>>
        async_media_frame_reader_start_status;
+@@ -360,9 +344,12 @@ HRESULT VideoCaptureWinRTInternal::FrameArrived(
+   ComPtr<IMemoryBuffer> memory_buffer;
+   ComPtr<IMemoryBufferReference> memory_buffer_reference;
+   ComPtr<IMemoryBufferByteAccess> memory_buffer_byte_access;
++  BitmapPlaneDescription bitmap_plane_description_y;
++  BitmapPlaneDescription bitmap_plane_description_uv;
+   HString video_subtype;
+   uint8_t* bitmap_content;
+   uint32_t bitmap_capacity;
++  int32_t plane_count;
+ 
+   THR(media_frame_reader->TryAcquireLatestFrame(&media_frame_reference));
+ 
+@@ -384,15 +371,45 @@ HRESULT VideoCaptureWinRTInternal::FrameArrived(
+     frameInfo.interlaced = false;
+ 
+     THR(video_media_frame->get_SoftwareBitmap(&software_bitmap));
++
+     THR(software_bitmap->LockBuffer(
+         BitmapBufferAccessMode::BitmapBufferAccessMode_Read, &bitmap_buffer));
++
++    THR(bitmap_buffer->GetPlaneCount(&plane_count));
++    THR(plane_count == 2 ? S_OK : E_FAIL);
++    THR(bitmap_buffer->GetPlaneDescription(0, &bitmap_plane_description_y));
++    THR(bitmap_buffer->GetPlaneDescription(1, &bitmap_plane_description_uv));
++
+     THR(bitmap_buffer.As(&memory_buffer));
+     THR(memory_buffer->CreateReference(&memory_buffer_reference));
+     THR(memory_buffer_reference.As(&memory_buffer_byte_access));
+     THR(memory_buffer_byte_access->GetBuffer(&bitmap_content,
+                                              &bitmap_capacity));
+ 
+-    pfn_incoming_frame_(bitmap_content, bitmap_capacity, frameInfo, 0);
++    // hack(auright): The following hack works around the limitations of 
++    // libWebRTC memory representations for YUV planar images. Windows::Media::Capture allows
++    // representing NV12 images with strides greater than YUV widths and with a gap between
++    // the Y plane and the UV planes. The following workaround compresses the image in memory
++    // by removing the gap between planes and making the stride equal to widths. This is a
++    // temporary hack until the implementation with Media Foundation is in place.
++    if ((bitmap_plane_description_y.Width != bitmap_plane_description_y.Stride) ||
++        (bitmap_plane_description_uv.Width * 2 != bitmap_plane_description_uv.Stride) ||
++        (bitmap_plane_description_y.Width * bitmap_plane_description_y.Height != bitmap_plane_description_uv.StartIndex)) {
++        uint8_t* pContiguousYUV = bitmap_content + bitmap_plane_description_y.Width;
++        for (auto i = 1; i < bitmap_plane_description_y.Height; ++i) {
++          memcpy(pContiguousYUV, bitmap_content + (i * bitmap_plane_description_y.Stride), bitmap_plane_description_y.Width);
++          pContiguousYUV += bitmap_plane_description_y.Width;
++        }
++        for (auto i = 0; i < bitmap_plane_description_uv.Height; ++i) {
++          memcpy(pContiguousYUV, bitmap_content + bitmap_plane_description_uv.StartIndex + (i * bitmap_plane_description_uv.Stride), bitmap_plane_description_uv.Width * 2);
++          pContiguousYUV += bitmap_plane_description_uv.Width * 2;
++        }
++
++        pfn_incoming_frame_(bitmap_content, pContiguousYUV - bitmap_content, frameInfo, 0);
++    } else {
++      pfn_incoming_frame_(bitmap_content, bitmap_capacity, frameInfo, 0);
++    }
++
+   }
+ 
+ Cleanup:
 -- 
-2.21.0.windows.1
+2.26.2.windows.1
 
