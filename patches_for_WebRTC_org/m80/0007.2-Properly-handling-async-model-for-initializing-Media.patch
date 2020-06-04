@@ -1,4 +1,4 @@
-From 8169d726cdc4ef049d6ef64e202e07e3bb58ee3b Mon Sep 17 00:00:00 2001
+From ee2a99a20bd6d53f0314a0303cff730391494ff9 Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Wed, 27 May 2020 23:38:26 -0700
 Subject: [PATCH] Properly handling async model for initializing MediaCapture
@@ -8,9 +8,9 @@ Working around the stride and gap issues with NV12 memory layout
 ---
  .../windows/device_info_winrt.cc              | 178 ++++++----------
  .../windows/help_functions_winrt.cc           | 199 +++++++++++++++++-
- .../windows/help_functions_winrt.h            |  54 ++++-
+ .../windows/help_functions_winrt.h            |  53 ++++-
  .../windows/video_capture_winrt.cc            |  61 ++++--
- 4 files changed, 343 insertions(+), 149 deletions(-)
+ 4 files changed, 342 insertions(+), 149 deletions(-)
 
 diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
 index 3b2a7aa773..2a7676be1a 100644
@@ -268,7 +268,7 @@ index 3b2a7aa773..2a7676be1a 100644
  
  uint32_t DeviceInfoWinRT::NumberOfDevices() {
 diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
-index 709c685b26..b3f5de59f2 100644
+index 709c685b26..83f599fb6f 100644
 --- a/modules/video_capture/windows/help_functions_winrt.cc
 +++ b/modules/video_capture/windows/help_functions_winrt.cc
 @@ -10,19 +10,175 @@
@@ -343,7 +343,7 @@ index 709c685b26..b3f5de59f2 100644
 +  // We'll be dispatching and waiting for code from the UI thread.
 +  // Let's make sure this is not the UI thread.
 +  THR(main_view_dispatcher->get_HasThreadAccess(&has_thread_access));
-+  THR(has_thread_access ? E_FAIL : S_OK);
++  THR(has_thread_access ? RPC_E_WRONG_THREAD : S_OK);
 +
 +  // The media capture device has to be initialized in the UI thread.
 +  // The following event is used for letting this thread know that
@@ -489,7 +489,7 @@ index 709c685b26..b3f5de59f2 100644
    HRESULT hr, hr_async_error;
    const DWORD timeout_ms = 2000;
 diff --git a/modules/video_capture/windows/help_functions_winrt.h b/modules/video_capture/windows/help_functions_winrt.h
-index 0216d9b0ce..6b81bfc977 100644
+index 0216d9b0ce..7c55f87654 100644
 --- a/modules/video_capture/windows/help_functions_winrt.h
 +++ b/modules/video_capture/windows/help_functions_winrt.h
 @@ -13,6 +13,7 @@
@@ -500,7 +500,7 @@ index 0216d9b0ce..6b81bfc977 100644
  #include <wrl/client.h>
  #include <wrl/event.h>
  #include <wrl/wrappers/corewrappers.h>
-@@ -20,15 +21,51 @@
+@@ -20,15 +21,50 @@
  #include <cassert>
  
  #include "modules/video_capture/video_capture_defines.h"
@@ -518,8 +518,7 @@ index 0216d9b0ce..6b81bfc977 100644
 +  do {                                                      \
 +    hr = (expr);                                            \
 +    if (FAILED(hr)) {                                       \
-+      RTC_LOG(LS_ERROR) << "HR: " << hr;                    \
-+      RTC_LOG(LS_ERROR) << __FUNCTION__ << ":" << __LINE__; \
++      RTC_LOG_F(LS_ERROR) << "HR: " << hr;                  \
 +      __debugbreak();                                       \
 +      goto Cleanup;                                         \
 +    }                                                       \
@@ -557,7 +556,7 @@ index 0216d9b0ce..6b81bfc977 100644
  
  namespace webrtc {
  namespace videocapturemodule {
-@@ -38,6 +75,13 @@ uint32_t SafelyComputeMediaRatio(
+@@ -38,6 +74,13 @@ uint32_t SafelyComputeMediaRatio(
  
  VideoType ToVideoType(const Microsoft::WRL::Wrappers::HString& sub_type);
  
@@ -572,7 +571,7 @@ index 0216d9b0ce..6b81bfc977 100644
      Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncAction>
          async_action);
 diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
-index 5aa3541b34..4a8a597bdf 100644
+index 5aa3541b34..44d7cdca68 100644
 --- a/modules/video_capture/windows/video_capture_winrt.cc
 +++ b/modules/video_capture/windows/video_capture_winrt.cc
 @@ -68,6 +68,7 @@ using ABI::Windows::Media::Capture::Frames::MediaFrameReaderStartStatus;
@@ -663,12 +662,12 @@ index 5aa3541b34..4a8a597bdf 100644
                                               &bitmap_capacity));
  
 -    pfn_incoming_frame_(bitmap_content, bitmap_capacity, frameInfo, 0);
-+    // hack(auright): The following hack works around the limitations of 
++    // workaround(auright): The following code works around the limitations of 
 +    // libWebRTC memory representations for YUV planar images. Windows::Media::Capture allows
 +    // representing NV12 images with strides greater than YUV widths and with a gap between
 +    // the Y plane and the UV planes. The following workaround compresses the image in memory
 +    // by removing the gap between planes and making the stride equal to widths. This is a
-+    // temporary hack until the implementation with Media Foundation is in place.
++    // temporary workaround until the implementation with Media Foundation is in place.
 +    if ((bitmap_plane_description_y.Width != bitmap_plane_description_y.Stride) ||
 +        (bitmap_plane_description_uv.Width * 2 != bitmap_plane_description_uv.Stride) ||
 +        (bitmap_plane_description_y.Width * bitmap_plane_description_y.Height != bitmap_plane_description_uv.StartIndex)) {
