@@ -1,0 +1,8 @@
+static_analysis_options:
+  policheck_options:
+    disable_tool_scan: false
+    fail_on_error: true
+    scan_comments: true
+  binskim_options:
+    disable_tool_scan: false
+    fail_on_error: true
