@@ -14,6 +14,10 @@ git.exe am "%PATCH_DIR%0002-UWP-apps-do-support-GetProcAddress-but-do-support-Ge
 git.exe am "%PATCH_DIR%0009-Fixing-UWP-build-for-libvpx.patch"
 popd
 
+pushd %WEBRTCM80_ROOT%\third_party\libyuv
+git.exe am "%PATCH_DIR%0007.3-Fixing-NV12-to-I420-conversion-with-strides-and-gap.patch"
+popd
+
 pushd %WEBRTCM80_ROOT%\third_party\boringssl\src
 git.exe am "%PATCH_DIR%0003-Replacing-deprecated-and-non-UWP-supported-RtlGenRan.patch"
 git.exe am "%PATCH_DIR%6401-Arm64-is-a-thing-and-has-intrinsic-to-mul-two-64bit-.patch"

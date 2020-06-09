@@ -1,4 +1,4 @@
-From c48576f03202179141476832cba6a76b4f4eddd7 Mon Sep 17 00:00:00 2001
+From 69bfd0c42bb4d21b158497d71f1bb0dd12884467 Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Wed, 27 May 2020 23:38:26 -0700
 Subject: [PATCH] Properly handling async model for initializing MediaCapture
@@ -20,13 +20,93 @@ device_info_winrt, repent for the goto sins
 No more goto or THR sins
 
 Not using ReleaseInterface anymore
+
+Passing YUV strides and gap down to libyuv
 ---
+ modules/video_capture/video_capture_impl.cc   |  28 +-
+ modules/video_capture/video_capture_impl.h    |   5 +-
  .../windows/device_info_winrt.cc              | 402 +++++++------
  .../windows/help_functions_winrt.cc           | 335 +++++++++--
  .../windows/help_functions_winrt.h            | 123 ++--
- .../windows/video_capture_winrt.cc            | 565 ++++++++++++------
- 4 files changed, 937 insertions(+), 488 deletions(-)
+ .../windows/video_capture_winrt.cc            | 562 +++++++++++-------
+ 6 files changed, 943 insertions(+), 512 deletions(-)
 
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index 9d53a91157..398e41c07b 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -114,7 +114,10 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
+   return 0;
+ }
+ 
+-int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
++int32_t VideoCaptureImpl::IncomingFrame(uint8_t* plane_y,
++                                        int32_t stride_y,
++                                        uint8_t* plane_uv,
++                                        int32_t stride_uv,
+                                         size_t videoFrameLength,
+                                         const VideoCaptureCapability& frameInfo,
+                                         int64_t captureTime /*=0*/) {
+@@ -125,16 +128,8 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+ 
+   TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
+ 
+-  // Not encoded, convert to I420.
+-  if (frameInfo.videoType != VideoType::kMJPEG &&
+-      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
+-          videoFrameLength) {
+-    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
+-    return -1;
+-  }
+-
+-  int stride_y = width;
+-  int stride_uv = (width + 1) / 2;
++  int dst_stride_y = width;
++  int dst_stride_uv = (width + 1) / 2;
+   int target_width = width;
+   int target_height = abs(height);
+ 
+@@ -156,7 +151,7 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+ 
+   // TODO(nisse): Use a pool?
+   rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+-      target_width, target_height, stride_y, stride_uv, stride_uv);
++      target_width, target_height, dst_stride_y, dst_stride_uv, dst_stride_uv);
+ 
+   libyuv::RotationMode rotation_mode = libyuv::kRotate0;
+   if (apply_rotation) {
+@@ -177,10 +172,11 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+   }
+ 
+   const int conversionResult = libyuv::ConvertToI420(
+-      videoFrame, videoFrameLength, buffer.get()->MutableDataY(),
+-      buffer.get()->StrideY(), buffer.get()->MutableDataU(),
+-      buffer.get()->StrideU(), buffer.get()->MutableDataV(),
+-      buffer.get()->StrideV(), 0, 0,  // No Cropping
++      plane_y, videoFrameLength, stride_y, plane_uv, stride_uv,
++      buffer.get()->MutableDataY(), buffer.get()->StrideY(),
++      buffer.get()->MutableDataU(), buffer.get()->StrideU(),
++      buffer.get()->MutableDataV(), buffer.get()->StrideV(), 0,
++      0,  // No Cropping
+       width, height, target_width, target_height, rotation_mode,
+       ConvertVideoType(frameInfo.videoType));
+   if (conversionResult < 0) {
+diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
+index 197bfd387c..ed687106b9 100644
+--- a/modules/video_capture/video_capture_impl.h
++++ b/modules/video_capture/video_capture_impl.h
+@@ -62,7 +62,10 @@ class VideoCaptureImpl : public VideoCaptureModule {
+   const char* CurrentDeviceName() const override;
+ 
+   // |capture_time| must be specified in NTP time format in milliseconds.
+-  int32_t IncomingFrame(uint8_t* videoFrame,
++  int32_t IncomingFrame(uint8_t* plane_y,
++                        int32_t stride_y,
++                        uint8_t* plane_uv,
++                        int32_t stride_uv,
+                         size_t videoFrameLength,
+                         const VideoCaptureCapability& frameInfo,
+                         int64_t captureTime = 0);
 diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
 index 3b2a7aa773..3e21c292cc 100644
 --- a/modules/video_capture/windows/device_info_winrt.cc
@@ -1148,7 +1228,7 @@ index 0216d9b0ce..9dae10bcf0 100644
  }
  
 diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
-index 5aa3541b34..9a8c58c74f 100644
+index 5aa3541b34..a41fccfdb1 100644
 --- a/modules/video_capture/windows/video_capture_winrt.cc
 +++ b/modules/video_capture/windows/video_capture_winrt.cc
 @@ -32,46 +32,48 @@ struct __declspec(uuid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")) __declspec(
@@ -1240,7 +1320,34 @@ index 5aa3541b34..9a8c58c74f 100644
  
  namespace webrtc {
  namespace videocapturemodule {
-@@ -103,17 +105,13 @@ struct VideoCaptureWinRTInternal {
+@@ -83,12 +85,20 @@ namespace videocapturemodule {
+ ///////////////////////////////////////////////////////////////////////////////
+ 
+ // Callback type for the following method:
+-// int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+-//                     size_t videoFrameLength,
+-//                     const VideoCaptureCapability& frameInfo,
+-//                     int64_t captureTime = 0);
+-typedef std::function<
+-    int32_t(uint8_t*, size_t, const VideoCaptureCapability&, int64_t)>
++// int32_t VideoCaptureImpl::IncomingFrame(uint8_t *plane_y,
++//                                         int32_t stride_y,
++//                                         uint8_t *plane_uv,
++//                                         int32_t stride_uv,
++//                                         size_t videoFrameLength,
++//                                         const VideoCaptureCapability
++//                                         &frameInfo, int64_t captureTime = 0
++typedef std::function<int32_t(uint8_t*,
++                              int32_t,
++                              uint8_t*,
++                              int32_t,
++                              size_t,
++                              const VideoCaptureCapability&,
++                              int64_t)>
+     PFNIncomingFrameType;
+ 
+ struct VideoCaptureWinRTInternal {
+@@ -103,17 +113,13 @@ struct VideoCaptureWinRTInternal {
    HRESULT StopCapture();
    bool CaptureStarted();
  
@@ -1262,7 +1369,7 @@ index 5aa3541b34..9a8c58c74f 100644
    EventRegistrationToken media_source_frame_arrived_token;
  
    bool is_capturing = false;
-@@ -125,78 +123,83 @@ VideoCaptureWinRTInternal::VideoCaptureWinRTInternal(
+@@ -125,78 +131,83 @@ VideoCaptureWinRTInternal::VideoCaptureWinRTInternal(
      : pfn_incoming_frame_(pfn_incoming_frame) {}
  
  VideoCaptureWinRTInternal::~VideoCaptureWinRTInternal() {
@@ -1377,12 +1484,12 @@ index 5aa3541b34..9a8c58c74f 100644
 +  if (SUCCEEDED(hr)) {
 +    hr = frame_sources.As(&iterable);
 +  }
-+
+ 
+-  while (has_current) {
 +  if (SUCCEEDED(hr)) {
 +    hr = iterable->First(&frame_source_iterator);
 +  }
- 
--  while (has_current) {
++
 +  if (SUCCEEDED(hr)) {
 +    hr = frame_source_iterator->get_HasCurrent(&has_current);
 +  }
@@ -1391,7 +1498,7 @@ index 5aa3541b34..9a8c58c74f 100644
      ComPtr<IKeyValuePair<HSTRING, MediaFrameSource*>> key_value;
      ComPtr<IMediaFrameSource> value;
      ComPtr<IMediaFrameSourceInfo> info;
-@@ -208,64 +211,112 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -208,64 +219,112 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
      unsigned int supported_formats_count;
      UINT32 frame_width, frame_height;
  
@@ -1520,22 +1627,22 @@ index 5aa3541b34..9a8c58c74f 100644
 +      if (SUCCEEDED(hr)) {
 +        media_frame_source = value;
 +      }
-+
-+      if (SUCCEEDED(hr)) {
-+        hr = media_frame_source->SetFormatAsync(media_frame_format.Get(),
-+                                                &async_action);
-+      }
  
 -      THR(media_frame_source->SetFormatAsync(media_frame_format.Get(),
 -                                             &async_action));
 -      THR(WaitForAsyncAction(async_action));
++      if (SUCCEEDED(hr)) {
++        hr = media_frame_source->SetFormatAsync(media_frame_format.Get(),
++                                                &async_action);
++      }
++
 +      if (SUCCEEDED(hr)) {
 +        hr = WaitForAsyncAction(async_action);
 +      }
  
        break;
      }
-@@ -274,44 +325,68 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -274,44 +333,68 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
      // Studio 2 camera has a color source provider and a depth source
      // provider. We don't need to continue looking for sources once the first
      // color source provider matches with the configuration we're looking for.
@@ -1550,15 +1657,15 @@ index 5aa3541b34..9a8c58c74f 100644
 +  if (SUCCEEDED(hr)) {
 +    hr = media_frame_source ? S_OK : E_FAIL;
 +  }
-+
-+  if (SUCCEEDED(hr)) {
-+    hr = media_capture5->CreateFrameReaderAsync(media_frame_source.Get(),
-+                                                &async_operation);
-+  }
  
 -  THR(media_capture5->CreateFrameReaderAsync(media_frame_source.Get(),
 -                                             &async_operation));
 -  THR(WaitForAsyncOperation(async_operation));
++  if (SUCCEEDED(hr)) {
++    hr = media_capture5->CreateFrameReaderAsync(media_frame_source.Get(),
++                                                &async_operation);
++  }
++
 +  if (SUCCEEDED(hr)) {
 +    hr = WaitForAsyncOperation(async_operation);
 +  }
@@ -1634,7 +1741,7 @@ index 5aa3541b34..9a8c58c74f 100644
    return hr;
  }
  
-@@ -325,16 +400,26 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+@@ -325,16 +408,26 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
    if (is_capturing) {
      ComPtr<IAsyncAction> async_action;
  
@@ -1667,7 +1774,7 @@ index 5aa3541b34..9a8c58c74f 100644
    return hr;
  }
  
-@@ -343,12 +428,11 @@ bool VideoCaptureWinRTInternal::CaptureStarted() {
+@@ -343,12 +436,11 @@ bool VideoCaptureWinRTInternal::CaptureStarted() {
  }
  
  HRESULT VideoCaptureWinRTInternal::FrameArrived(
@@ -1683,7 +1790,7 @@ index 5aa3541b34..9a8c58c74f 100644
    ComPtr<IMediaFrameReader> media_frame_reader{sender_no_ref};
    ComPtr<IMediaFrameReference> media_frame_reference;
    ComPtr<IVideoMediaFrame> video_media_frame;
-@@ -360,42 +444,137 @@ HRESULT VideoCaptureWinRTInternal::FrameArrived(
+@@ -360,42 +452,109 @@ HRESULT VideoCaptureWinRTInternal::FrameArrived(
    ComPtr<IMemoryBuffer> memory_buffer;
    ComPtr<IMemoryBufferReference> memory_buffer_reference;
    ComPtr<IMemoryBufferByteAccess> memory_buffer_byte_access;
@@ -1807,49 +1914,33 @@ index 5aa3541b34..9a8c58c74f 100644
 +                                                &bitmap_capacity);
 +    }
 +
-+    // workaround(auright): The following code works around the limitations of
-+    // libWebRTC memory representations for YUV planar images.
-+    // Windows::Media::Capture allows representing NV12 images with strides
-+    // greater than YUV widths and with a gap between the Y plane and the UV
-+    // planes. The following workaround compresses the image in memory by
-+    // removing the gap between planes and making the stride equal to widths.
-+    // This is a temporary workaround until the implementation with Media
-+    // Foundation is in place.
 +    if (SUCCEEDED(hr)) {
-+      if ((bitmap_plane_description_y.Width !=
-+           bitmap_plane_description_y.Stride) ||
-+          (bitmap_plane_description_uv.Width * 2 !=
-+           bitmap_plane_description_uv.Stride) ||
-+          (bitmap_plane_description_y.Width *
-+               bitmap_plane_description_y.Height !=
-+           bitmap_plane_description_uv.StartIndex)) {
-+        uint8_t* pContiguousYUV =
-+            bitmap_content + bitmap_plane_description_y.Width;
-+        for (auto i = 1; i < bitmap_plane_description_y.Height; ++i) {
-+          memcpy(pContiguousYUV,
-+                 bitmap_content + (i * bitmap_plane_description_y.Stride),
-+                 bitmap_plane_description_y.Width);
-+          pContiguousYUV += bitmap_plane_description_y.Width;
-+        }
-+        for (auto i = 0; i < bitmap_plane_description_uv.Height; ++i) {
-+          memcpy(pContiguousYUV,
-+                 bitmap_content + bitmap_plane_description_uv.StartIndex +
-+                     (i * bitmap_plane_description_uv.Stride),
-+                 bitmap_plane_description_uv.Width * 2);
-+          pContiguousYUV += bitmap_plane_description_uv.Width * 2;
-+        }
-+
-+        pfn_incoming_frame_(bitmap_content, pContiguousYUV - bitmap_content,
-+                            frameInfo, 0);
-+      } else {
-+        pfn_incoming_frame_(bitmap_content, bitmap_capacity, frameInfo, 0);
-+      }
++      pfn_incoming_frame_(
++          bitmap_content,                                           // Plane Y
++          bitmap_plane_description_y.Stride,                        // Stride Y
++          bitmap_content + bitmap_plane_description_uv.StartIndex,  // Plane UV
++          bitmap_plane_description_uv.Stride,                       // Stride UV
++          bitmap_capacity,  // YUV buffer size
++          frameInfo,        // Y Width and Height
++          0);               // Capture Time
 +    }
 +  }
 +
    if (memory_buffer_reference) {
      ComPtr<IClosable> closable;
      memory_buffer_reference.As(&closable);
+@@ -441,7 +600,10 @@ VideoCaptureWinRT::VideoCaptureWinRT()
+                     std::placeholders::_1,
+                     std::placeholders::_2,
+                     std::placeholders::_3,
+-                    std::placeholders::_4))) {}
++                    std::placeholders::_4,
++                    std::placeholders::_5,
++                    std::placeholders::_6,
++                    std::placeholders::_7))) {}
+ 
+ VideoCaptureWinRT::~VideoCaptureWinRT() {
+   delete Impl(video_capture_internal_);
 -- 
-2.26.2.windows.1
+2.21.0.windows.1
 
