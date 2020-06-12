@@ -1,4 +1,4 @@
-From e175ec7452c929c7137618549c4a6b23cb1e3a91 Mon Sep 17 00:00:00 2001
+From e69d43b085062ce6d5ae2acb5f776c4533f81344 Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Wed, 10 Jun 2020 17:01:45 -0700
 Subject: [PATCH] Adding video profiles capabilities to the video capture
@@ -8,10 +8,10 @@ Subject: [PATCH] Adding video profiles capabilities to the video capture
  modules/video_capture/BUILD.gn                |   5 +
  modules/video_capture/video_capture_defines.h |  33 +-
  .../windows/device_info_winrt.cc              | 431 ++++++++++++++----
- .../windows/help_functions_winrt.cc           | 194 +++++---
+ .../windows/help_functions_winrt.cc           | 187 +++++---
  .../windows/help_functions_winrt.h            |  40 +-
  .../windows/video_capture_winrt.cc            |  43 +-
- 6 files changed, 571 insertions(+), 175 deletions(-)
+ 6 files changed, 563 insertions(+), 176 deletions(-)
 
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
 index 61b19993e0..67e75968b7 100644
@@ -602,7 +602,7 @@ index 3e21c292cc..a280e3e140 100644
  
    if (SUCCEEDED(hr)) {
 diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
-index 285abca235..8c1885e41f 100644
+index 285abca235..7155d4fef4 100644
 --- a/modules/video_capture/windows/help_functions_winrt.cc
 +++ b/modules/video_capture/windows/help_functions_winrt.cc
 @@ -26,7 +26,10 @@ using ::ABI::Windows::Media::Capture::IMediaCapture;
@@ -695,7 +695,7 @@ index 285abca235..8c1885e41f 100644
  
    // We'll be dispatching and waiting for code from the UI thread.
    // Let's make sure this is not the UI thread.
-@@ -153,14 +135,30 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+@@ -153,15 +135,22 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
                              FtmBase>>(
              [&event_wait_for_media_capture_async_action,
               &async_action_media_capture_agile, &media_capture_agile,
@@ -709,27 +709,20 @@ index 285abca235..8c1885e41f 100644
 +
 +              if (SUCCEEDED(hr)) {
 +                hr = media_capture_agile.As(&media_capture);
-+              } else {
-+                __debugbreak();
-+              }
 +
 +              if (SUCCEEDED(hr)) {
 +                hr = media_capture->InitializeWithSettingsAsync(
 +                    initialization_settings,
 +                    media_capture_async.ReleaseAndGetAddressOf());
-+              } else {
-+                __debugbreak();
-+              }
  
                if (SUCCEEDED(hr)) {
                  hr = media_capture_async.AsAgile(
                      &async_action_media_capture_agile);
-+              } else {
-+                __debugbreak();
-               }
+-              }
  
                ::SetEvent(event_wait_for_media_capture_async_action.Get());
-@@ -219,13 +217,23 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+ 
+@@ -219,13 +208,23 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
               : E_FAIL;
    }
  
@@ -755,7 +748,7 @@ index 285abca235..8c1885e41f 100644
  
    if (SUCCEEDED(hr)) {
      hr = ratio_no_ref->get_Denominator(&denominator);
-@@ -238,7 +246,7 @@ uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
+@@ -238,7 +237,7 @@ uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
    return media_ratio;
  }
  
@@ -764,7 +757,7 @@ index 285abca235..8c1885e41f 100644
    uint32_t cchCount;
    const wchar_t* video_type = sub_type.GetRawBuffer(&cchCount);
    VideoType converted_type = VideoType::kUnknown;
-@@ -272,25 +280,30 @@ VideoType ToVideoType(const HString& sub_type) {
+@@ -272,25 +271,30 @@ VideoType ToVideoType(const HString& sub_type) {
    return converted_type;
  }
  
@@ -803,7 +796,7 @@ index 285abca235..8c1885e41f 100644
    }
  
    if (SUCCEEDED(hr)) {
-@@ -308,9 +321,82 @@ HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
+@@ -308,9 +312,82 @@ HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
    return hr;
  }
  
@@ -887,7 +880,7 @@ index 285abca235..8c1885e41f 100644
    ComPtr<IAsyncInfo> async_info;
    Event event_completed;
    const DWORD timeout_ms = 2000;
-@@ -358,7 +444,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+@@ -358,7 +435,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
  
    // Checks if async operation completed successfully.
    if (SUCCEEDED(hr)) {
@@ -896,7 +889,7 @@ index 285abca235..8c1885e41f 100644
    }
  
    if (SUCCEEDED(hr)) {
-@@ -370,7 +456,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+@@ -370,7 +447,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
    }
  
    return hr;
