@@ -14,6 +14,10 @@ git.exe am "%PATCH_DIR%0002-UWP-apps-do-support-GetProcAddress-but-do-support-Ge
 git.exe am "%PATCH_DIR%0009-Fixing-UWP-build-for-libvpx.patch"
 popd
 
+pushd %WEBRTCM80_ROOT%\third_party\libyuv
+git.exe am "%PATCH_DIR%0007.3-Fixing-NV12-to-I420-conversion-with-strides-and-gap.patch"
+popd
+
 pushd %WEBRTCM80_ROOT%\third_party\boringssl\src
 git.exe am "%PATCH_DIR%0003-Replacing-deprecated-and-non-UWP-supported-RtlGenRan.patch"
 git.exe am "%PATCH_DIR%6401-Arm64-is-a-thing-and-has-intrinsic-to-mul-two-64bit-.patch"
@@ -29,6 +33,7 @@ git.exe am "%PATCH_DIR%0005-Fixing-UWP-build-for-time_utils.cc.patch"
 git.exe am "%PATCH_DIR%0006-Fixing-UWP-build-for-file_rotating_stream.cc.patch"
 git.exe am "%PATCH_DIR%0007-Fixing-UWP-build-for-modules-video_capture.patch"
 git.exe am "%PATCH_DIR%0007.1-BUG-Requested-camera-settings-were-not-being-honored.patch"
+git.exe am "%PATCH_DIR%0007.2-Properly-handling-async-model-for-initializing-Media.patch"
 git.exe am "%PATCH_DIR%0008-Fixing-UWP-build-for-modules-audio_device.patch"
 git.exe am "%PATCH_DIR%6401-Shift-operator-in-Arm-doesn-t-work-the-same-as-Intel.patch"
 popd
