@@ -1,0 +1,1154 @@
+From 381ab553024b57b880054ea04406ed700911b244 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Wed, 10 Jun 2020 17:01:45 -0700
+Subject: [PATCH] Adding video profiles capabilities to the video capture
+ module
+
+---
+ modules/video_capture/BUILD.gn                |   5 +
+ modules/video_capture/video_capture_defines.h |  33 +-
+ .../windows/device_info_winrt.cc              | 431 ++++++++++++++----
+ .../windows/help_functions_winrt.cc           | 190 +++++---
+ .../windows/help_functions_winrt.h            |  40 +-
+ .../windows/video_capture_winrt.cc            | 100 ++--
+ 6 files changed, 570 insertions(+), 229 deletions(-)
+
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index 61b19993e0..50a1788404 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -14,6 +14,11 @@ import("../../webrtc.gni")
+ # use the internal capturer.
+ rtc_library("video_capture_module") {
+   visibility = [ "*" ]
++
++  if (rtc_win_video_capture_winrt) {
++    defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
++  }
++
+   sources = [
+     "device_info_impl.cc",
+     "device_info_impl.h",
+diff --git a/modules/video_capture/video_capture_defines.h b/modules/video_capture/video_capture_defines.h
+index 63534600a9..63205ec654 100644
+--- a/modules/video_capture/video_capture_defines.h
++++ b/modules/video_capture/video_capture_defines.h
+@@ -11,6 +11,10 @@
+ #ifndef MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+ #define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+ 
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++#include <wrl/client.h>
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+ #include "api/video/video_frame.h"
+ #include "common_video/libyuv/include/webrtc_libyuv.h"
+ 
+@@ -28,14 +32,19 @@ struct VideoCaptureCapability {
+   int32_t maxFPS;
+   VideoType videoType;
+   bool interlaced;
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  std::wstring profile_id;
++  ::Microsoft::WRL::ComPtr<::IUnknown> media_capture_video_profile;
++  ::Microsoft::WRL::ComPtr<::IUnknown> record_media_description;
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
++  VideoCaptureCapability()
++      : width(0),
++        height(0),
++        maxFPS(0),
++        videoType(VideoType::kUnknown),
++        interlaced(false) {}
+ 
+-  VideoCaptureCapability() {
+-    width = 0;
+-    height = 0;
+-    maxFPS = 0;
+-    videoType = VideoType::kUnknown;
+-    interlaced = false;
+-  }
+   bool operator!=(const VideoCaptureCapability& other) const {
+     if (width != other.width)
+       return true;
+@@ -47,6 +56,16 @@ struct VideoCaptureCapability {
+       return true;
+     if (interlaced != other.interlaced)
+       return true;
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++    if (profile_id != other.profile_id)
++      return true;
++    if (media_capture_video_profile.Get() !=
++        other.media_capture_video_profile.Get())
++      return true;
++    if (record_media_description.Get() != other.record_media_description.Get())
++      return true;
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+     return false;
+   }
+   bool operator==(const VideoCaptureCapability& other) const {
+diff --git a/modules/video_capture/windows/device_info_winrt.cc b/modules/video_capture/windows/device_info_winrt.cc
+index 3e21c292cc..a280e3e140 100644
+--- a/modules/video_capture/windows/device_info_winrt.cc
++++ b/modules/video_capture/windows/device_info_winrt.cc
+@@ -45,7 +45,14 @@ using ::ABI::Windows::Foundation::Collections::IVectorView;
+ using ::ABI::Windows::Media::Capture::IMediaCapture;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings5;
++using ::ABI::Windows::Media::Capture::IMediaCaptureStatics;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfile;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfileMediaDescription;
++using ::ABI::Windows::Media::Capture::
++    IMediaCaptureVideoProfileMediaDescription2;
+ using ::ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
++using ::ABI::Windows::Media::Capture::MediaCaptureVideoProfile;
++using ::ABI::Windows::Media::Capture::MediaCaptureVideoProfileMediaDescription;
+ using ::ABI::Windows::Media::Capture::MediaStreamType;
+ using ::ABI::Windows::Media::Capture::StreamingCaptureMode;
+ using ::ABI::Windows::Media::Devices::IMediaDeviceController;
+@@ -100,10 +107,326 @@ struct DeviceInfoWinRTInternal {
+  private:
+   HRESULT GetDeviceInformationCollection(
+       IVectorView<DeviceInformation*>** device_collection);
++
++  HRESULT AssureMediaCaptureStatics();
++
++  HRESULT IsVideoProfileSupported(const HStringReference& device_id,
++                                  boolean* video_profile_supported);
++
++  HRESULT GetMediaCaptureVideoProfilesForDevice(
++      const HStringReference& device_id,
++      ComPtr<IVectorView<MediaCaptureVideoProfile*>>& video_profiles);
++
++  HRESULT FillVideoCaptureCapabilityFromProfiles(
++      const ComPtr<IVectorView<MediaCaptureVideoProfile*>>& video_profiles,
++      vector<VideoCaptureCapability>& device_caps);
++
++  HRESULT FillVideoCaptureCapabilityFromProfile(
++      const ComPtr<IMediaCaptureVideoProfile>& video_profile,
++      vector<VideoCaptureCapability>& device_caps);
++
++  HRESULT FillVideoCaptureCapabilityFromDeviceProfiles(
++      const HStringReference& device_id,
++      vector<VideoCaptureCapability>& device_caps);
++
++  HRESULT FillVideoCaptureCapabilityFromMediaController(
++      const ComPtr<IMediaDeviceController>& media_device_controller,
++      vector<VideoCaptureCapability>& device_caps);
++
++  HRESULT FillVideoCaptureCapabilityFromDeviceWithoutProfiles(
++      const HStringReference& device_id,
++      vector<VideoCaptureCapability>& device_caps);
++
++  ComPtr<IMediaCaptureStatics> media_capture_statics_;
+ };
+ 
+ DeviceInfoWinRTInternal::DeviceInfoWinRTInternal() {}
+ 
++HRESULT DeviceInfoWinRTInternal::AssureMediaCaptureStatics() {
++  HRESULT hr = S_OK;
++
++  if (!media_capture_statics_) {
++    hr = GetActivationFactory(
++        HStringReference(RuntimeClass_Windows_Media_Capture_MediaCapture).Get(),
++        media_capture_statics_.ReleaseAndGetAddressOf());
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::IsVideoProfileSupported(
++    _In_ const HStringReference& device_id,
++    _Out_ boolean* video_profile_supported) {
++  HRESULT hr = S_OK;
++
++  if (SUCCEEDED(hr)) {
++    hr = AssureMediaCaptureStatics();
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = media_capture_statics_->IsVideoProfileSupported(
++        device_id.Get(), video_profile_supported);
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::GetMediaCaptureVideoProfilesForDevice(
++    const HStringReference& device_id,
++    ComPtr<IVectorView<MediaCaptureVideoProfile*>>& video_profiles) {
++  HRESULT hr = S_OK;
++
++  if (SUCCEEDED(hr)) {
++    hr = AssureMediaCaptureStatics();
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = media_capture_statics_->FindAllVideoProfiles(device_id.Get(),
++                                                      &video_profiles);
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::FillVideoCaptureCapabilityFromProfiles(
++    const ComPtr<IVectorView<MediaCaptureVideoProfile*>>& video_profiles,
++    vector<VideoCaptureCapability>& device_caps) {
++  HRESULT hr = S_OK;
++  unsigned int video_profiles_size = 0;
++
++  if (SUCCEEDED(hr)) {
++    hr = video_profiles->get_Size(&video_profiles_size);
++  }
++
++  for (unsigned int i = 0; SUCCEEDED(hr) && i < video_profiles_size; ++i) {
++    ComPtr<IMediaCaptureVideoProfile> media_capture_video_profile;
++    HString profile_id;
++
++    if (SUCCEEDED(hr)) {
++      hr = video_profiles->GetAt(i, &media_capture_video_profile);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = FillVideoCaptureCapabilityFromProfile(media_capture_video_profile,
++                                                 device_caps);
++    }
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::FillVideoCaptureCapabilityFromProfile(
++    const ComPtr<IMediaCaptureVideoProfile>& video_profile,
++    vector<VideoCaptureCapability>& device_caps) {
++  HRESULT hr = S_OK;
++  ComPtr<IVectorView<MediaCaptureVideoProfileMediaDescription*>>
++      profile_description_list;
++  HString profile_id;
++  unsigned int profile_description_size = 0;
++
++  if (SUCCEEDED(hr)) {
++    hr = video_profile->get_SupportedRecordMediaDescription(
++        &profile_description_list);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = video_profile->get_Id(profile_id.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = profile_description_list->get_Size(&profile_description_size);
++  }
++
++  for (unsigned int i = 0; SUCCEEDED(hr) && i < profile_description_size; ++i) {
++    ComPtr<IMediaCaptureVideoProfileMediaDescription> profile_description;
++    ComPtr<IMediaCaptureVideoProfileMediaDescription2> profile_description2;
++    ComPtr<IUnknown> video_profile_as_unknown;
++    ComPtr<IUnknown> profile_description_as_unknown;
++    HString subtype;
++    VideoCaptureCapability video_capture_capability;
++    double frame_rate;
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description_list->GetAt(i, &profile_description);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description->get_Width(
++          reinterpret_cast<UINT32*>(&video_capture_capability.width));
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description->get_Height(
++          reinterpret_cast<UINT32*>(&video_capture_capability.height));
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description->get_FrameRate(&frame_rate);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description.As(&profile_description2);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description2->get_Subtype(subtype.ReleaseAndGetAddressOf());
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = video_profile.As(&video_profile_as_unknown);
++    }
++
++    if (SUCCEEDED(hr)) {
++      video_capture_capability.media_capture_video_profile =
++          video_profile_as_unknown;
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = profile_description.As(&profile_description_as_unknown);
++    }
++
++    if (SUCCEEDED(hr)) {
++      video_capture_capability.record_media_description =
++          profile_description_as_unknown;
++    }
++
++    if (SUCCEEDED(hr)) {
++      video_capture_capability.videoType = ToVideoType(subtype);
++      video_capture_capability.maxFPS = frame_rate;
++      video_capture_capability.interlaced = false;
++      video_capture_capability.profile_id = profile_id.GetRawBuffer(nullptr);
++      device_caps.push_back(video_capture_capability);
++    }
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::FillVideoCaptureCapabilityFromDeviceProfiles(
++    const HStringReference& device_id,
++    vector<VideoCaptureCapability>& device_caps) {
++  HRESULT hr = S_OK;
++  ComPtr<IVectorView<MediaCaptureVideoProfile*>> video_profiles;
++
++  if (SUCCEEDED(hr)) {
++    hr = GetMediaCaptureVideoProfilesForDevice(device_id, video_profiles);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = FillVideoCaptureCapabilityFromProfiles(video_profiles, device_caps);
++  }
++
++  return hr;
++}
++
++HRESULT DeviceInfoWinRTInternal::FillVideoCaptureCapabilityFromMediaController(
++    const ComPtr<IMediaDeviceController>& media_device_controller,
++    vector<VideoCaptureCapability>& device_caps) {
++  HRESULT hr = S_OK;
++  ComPtr<IVectorView<IMediaEncodingProperties*>> stream_capabilities;
++  unsigned int stream_capabilities_size = 0;
++
++  if (SUCCEEDED(hr)) {
++    hr = media_device_controller->GetAvailableMediaStreamProperties(
++        MediaStreamType::MediaStreamType_VideoRecord, &stream_capabilities);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = stream_capabilities->get_Size(&stream_capabilities_size);
++  }
++
++  for (unsigned int i = 0; SUCCEEDED(hr) && i < stream_capabilities_size; ++i) {
++    ComPtr<IMediaEncodingProperties> media_encoding_props;
++    ComPtr<IVideoEncodingProperties> video_encoding_props;
++    ComPtr<IMediaRatio> media_ratio;
++    VideoCaptureCapability video_capture_capability;
++    HString subtype;
++
++    if (SUCCEEDED(hr)) {
++      hr = stream_capabilities->GetAt(i, &media_encoding_props);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = media_encoding_props.As(&video_encoding_props);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = video_encoding_props->get_Width(
++          reinterpret_cast<UINT32*>(&video_capture_capability.width));
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = video_encoding_props->get_Height(
++          reinterpret_cast<UINT32*>(&video_capture_capability.height));
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = video_encoding_props->get_FrameRate(&media_ratio);
++    }
++
++    if (SUCCEEDED(hr)) {
++      video_capture_capability.maxFPS =
++          SafelyComputeMediaRatio(media_ratio.Get());
++
++      hr = media_encoding_props->get_Subtype(subtype.ReleaseAndGetAddressOf());
++    }
++
++    if (SUCCEEDED(hr)) {
++      video_capture_capability.videoType = ToVideoType(subtype);
++      video_capture_capability.interlaced = false;
++      device_caps.push_back(video_capture_capability);
++    }
++  }
++
++  return hr;
++}
++
++HRESULT
++DeviceInfoWinRTInternal::FillVideoCaptureCapabilityFromDeviceWithoutProfiles(
++    const HStringReference& device_id,
++    vector<VideoCaptureCapability>& device_caps) {
++  HRESULT hr = S_OK;
++  ComPtr<IMediaCaptureInitializationSettings> initialization_settings;
++  ComPtr<IMediaCapture> media_capture;
++  ComPtr<IClosable> media_capture_closable;
++  ComPtr<IVideoDeviceController> video_device_controller;
++  ComPtr<IMediaDeviceController> media_device_controller;
++
++  if (SUCCEEDED(hr)) {
++    hr = CreateMediaCaptureInitializationSettings(
++        device_id, nullptr, nullptr,
++        initialization_settings.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = GetMediaCaptureWithInitSettings(
++        initialization_settings.Get(), media_capture.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = media_capture->get_VideoDeviceController(&video_device_controller);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = video_device_controller.As(&media_device_controller);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = FillVideoCaptureCapabilityFromMediaController(media_device_controller,
++                                                       device_caps);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = media_capture.As(&media_capture_closable);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = media_capture_closable->Close();
++  }
++
++  return hr;
++}
++
+ HRESULT DeviceInfoWinRTInternal::GetDeviceInformationCollection(
+     IVectorView<DeviceInformation*>** device_collection) {
+   HRESULT hr = S_OK;
+@@ -122,7 +445,7 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceInformationCollection(
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = activation_factory.As<IDeviceInformationStatics>(&device_info_statics);
++    hr = activation_factory.As(&device_info_statics);
+   }
+ 
+   // Call FindAllAsync and then start the async operation.
+@@ -133,7 +456,7 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceInformationCollection(
+ 
+   // Block and suspend thread until the async operation finishes or timeouts.
+   if (SUCCEEDED(hr)) {
+-    hr = WaitForAsyncOperation(async_op_device_info_collection);
++    hr = WaitForAsyncOperation(async_op_device_info_collection.Get());
+   }
+ 
+   // Returns device collection if async operation completed successfully.
+@@ -145,10 +468,13 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceInformationCollection(
+ }
+ 
+ HRESULT DeviceInfoWinRTInternal::GetNumberOfDevices(uint32_t* device_count) {
++  HRESULT hr = S_OK;
+   ComPtr<IVectorView<DeviceInformation*>> device_info_collection;
+ 
+-  HRESULT hr = GetDeviceInformationCollection(
+-      device_info_collection.ReleaseAndGetAddressOf());
++  if (SUCCEEDED(hr)) {
++    hr = GetDeviceInformationCollection(
++        device_info_collection.ReleaseAndGetAddressOf());
++  }
+ 
+   if (SUCCEEDED(hr)) {
+     hr = device_info_collection->get_Size(device_count);
+@@ -165,13 +491,16 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceName(
+     uint32_t device_unique_id_UTF8_length,
+     char* product_unique_id_UTF8,
+     uint32_t product_unique_id_UTF8_length) {
++  HRESULT hr = S_OK;
+   uint32_t device_count;
+   ComPtr<IVectorView<DeviceInformation*>> device_info_collection;
+   ComPtr<IDeviceInformation> device_info;
+ 
+   // Gets the device information collection synchronously
+-  HRESULT hr = GetDeviceInformationCollection(
+-      device_info_collection.ReleaseAndGetAddressOf());
++  if (SUCCEEDED(hr)) {
++    hr = GetDeviceInformationCollection(
++        device_info_collection.ReleaseAndGetAddressOf());
++  }
+ 
+   // Checks if desired device index is within the collection
+   if (SUCCEEDED(hr)) {
+@@ -236,8 +565,8 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceName(
+       // hs_lenght doesn't count \0 needed by wcscpy_s.
+       ++hs_lenght;
+ 
+-      // The contents of the HString has to be copied to buffer because wcstok_s
+-      // is destructive operation.
++      // The contents of the HString has to be copied to buffer because
++      // wcstok_s is destructive operation.
+       buffer = std::make_unique<wchar_t[]>(hs_lenght);
+       hr = buffer ? S_OK : E_OUTOFMEMORY;
+     }
+@@ -276,97 +605,21 @@ HRESULT DeviceInfoWinRTInternal::GetDeviceName(
+ HRESULT DeviceInfoWinRTInternal::CreateCapabilityMap(
+     const wchar_t* device_unique_id,
+     vector<VideoCaptureCapability>* video_capture_capabilities) {
+-  ComPtr<IMediaCapture> media_capture;
+-  ComPtr<IClosable> media_capture_closable;
+-  ComPtr<IAsyncAction> async_action;
+-  ComPtr<IVideoDeviceController> video_device_controller;
+-  ComPtr<IMediaDeviceController> media_device_controller;
+-  ComPtr<IVectorView<IMediaEncodingProperties*>> stream_capabilities;
+-
+-  ComPtr<IAsyncAction> async_action_media_capture;
+-  Event event_wait_for_media_capture_async_action;
+-  Event event_wait_for_media_capture_async_action_complition;
+-
++  HRESULT hr = S_OK;
+   HStringReference device_id(device_unique_id);
+-  unsigned int stream_capabilities_size;
+   vector<VideoCaptureCapability> device_caps;
+ 
+-  HRESULT hr = video_capture_capabilities ? S_OK : E_INVALIDARG;
+-
+   if (SUCCEEDED(hr)) {
+-    hr = GetMediaCaptureForDevice(device_id.Get(), media_capture);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = media_capture->get_VideoDeviceController(&video_device_controller);
++    hr = video_capture_capabilities ? S_OK : E_INVALIDARG;
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = video_device_controller.As<IMediaDeviceController>(
+-        &media_device_controller);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = media_device_controller->GetAvailableMediaStreamProperties(
+-        MediaStreamType::MediaStreamType_VideoRecord, &stream_capabilities);
++    hr = FillVideoCaptureCapabilityFromDeviceProfiles(device_id, device_caps);
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = stream_capabilities->get_Size(&stream_capabilities_size);
+-  }
+-
+-  for (unsigned int i = 0; SUCCEEDED(hr) && i < stream_capabilities_size; ++i) {
+-    ComPtr<IMediaEncodingProperties> media_encoding_props;
+-    ComPtr<IVideoEncodingProperties> video_encoding_props;
+-    ComPtr<IMediaRatio> media_ratio;
+-    VideoCaptureCapability video_capture_capability;
+-    HString subtype;
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = stream_capabilities->GetAt(i, &media_encoding_props);
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = media_encoding_props.As<IVideoEncodingProperties>(
+-          &video_encoding_props);
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = video_encoding_props->get_Width(
+-          reinterpret_cast<UINT32*>(&video_capture_capability.width));
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = video_encoding_props->get_Height(
+-          reinterpret_cast<UINT32*>(&video_capture_capability.height));
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = video_encoding_props->get_FrameRate(&media_ratio);
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      video_capture_capability.maxFPS =
+-          SafelyComputeMediaRatio(media_ratio.Get());
+-
+-      hr = media_encoding_props->get_Subtype(subtype.ReleaseAndGetAddressOf());
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      video_capture_capability.videoType = ToVideoType(subtype);
+-
+-      video_capture_capability.interlaced = false;
+-
+-      device_caps.push_back(video_capture_capability);
+-    }
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = media_capture.As<IClosable>(&media_capture_closable);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = media_capture_closable->Close();
++    hr = FillVideoCaptureCapabilityFromDeviceWithoutProfiles(device_id,
++                                                             device_caps);
+   }
+ 
+   if (SUCCEEDED(hr)) {
+diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
+index 285abca235..94c623a55c 100644
+--- a/modules/video_capture/windows/help_functions_winrt.cc
++++ b/modules/video_capture/windows/help_functions_winrt.cc
+@@ -26,7 +26,10 @@ using ::ABI::Windows::Media::Capture::IMediaCapture;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureFailedEventArgs;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureFailedEventHandler;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings;
++using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings4;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings5;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfile;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfileMediaDescription;
+ using ::ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
+ using ::ABI::Windows::Media::Capture::StreamingCaptureMode;
+ using ::ABI::Windows::Media::MediaProperties::IMediaRatio;
+@@ -49,54 +52,11 @@ using ::Microsoft::WRL::Wrappers::HStringReference;
+ namespace webrtc {
+ namespace videocapturemodule {
+ 
+-HRESULT InitializeMediaCapture(const AgileRef& media_capture_agile,
+-                               const HSTRING& device_id,
+-                               ComPtr<IAsyncAction>& media_capture_async) {
++HRESULT GetMediaCaptureWithInitSettings(
++    _In_ IMediaCaptureInitializationSettings* initialization_settings,
++    _COM_Outptr_ IMediaCapture** pp_media_capture) {
++  HRESULT hr = S_OK;
+   ComPtr<IMediaCapture> media_capture;
+-  ComPtr<IMediaCaptureInitializationSettings> init_settings;
+-  ComPtr<IMediaCaptureInitializationSettings5> init_settings5;
+-
+-  HRESULT hr = media_capture_agile.As(&media_capture);
+-
+-  // Creates the settings used to select which capture device will be
+-  // used.
+-  if (SUCCEEDED(hr)) {
+-    hr = ActivateInstance(
+-        HStringReference(
+-            RuntimeClass_Windows_Media_Capture_MediaCaptureInitializationSettings)
+-            .Get(),
+-        &init_settings);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = init_settings->put_StreamingCaptureMode(
+-        StreamingCaptureMode::StreamingCaptureMode_Video);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr =
+-        init_settings.As<IMediaCaptureInitializationSettings5>(&init_settings5);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = init_settings5->put_MemoryPreference(
+-        MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = init_settings->put_VideoDeviceId(device_id);
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = media_capture->InitializeWithSettingsAsync(init_settings.Get(),
+-                                                    &media_capture_async);
+-  }
+-
+-  return hr;
+-}
+-
+-HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+-                                 ComPtr<IMediaCapture>& media_capture) {
+   ComPtr<ICoreDispatcher> main_view_dispatcher;
+   ComPtr<IAsyncAction> async_action_ui_dispatcher;
+   ComPtr<IAsyncAction> async_action_media_capture;
+@@ -107,7 +67,9 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+   boolean has_thread_access;
+ 
+   // Acquires the main view dispacther (UI thread).
+-  HRESULT hr = GetMainViewDispatcher(&main_view_dispatcher);
++  if (SUCCEEDED(hr)) {
++    hr = GetMainViewDispatcher(&main_view_dispatcher);
++  }
+ 
+   // We'll be dispatching and waiting for code from the UI thread.
+   // Let's make sure this is not the UI thread.
+@@ -153,10 +115,20 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+                             FtmBase>>(
+             [&event_wait_for_media_capture_async_action,
+              &async_action_media_capture_agile, &media_capture_agile,
+-             &device_id]() -> HRESULT {
++             &initialization_settings]() -> HRESULT {
++              HRESULT hr = S_OK;
+               ComPtr<IAsyncAction> media_capture_async;
+-              HRESULT hr = InitializeMediaCapture(
+-                  media_capture_agile, device_id, media_capture_async);
++              ComPtr<IMediaCapture> media_capture;
++
++              if (SUCCEEDED(hr)) {
++                hr = media_capture_agile.As(&media_capture);
++              }
++
++              if (SUCCEEDED(hr)) {
++                hr = media_capture->InitializeWithSettingsAsync(
++                    initialization_settings,
++                    media_capture_async.ReleaseAndGetAddressOf());
++              }
+ 
+               if (SUCCEEDED(hr)) {
+                 hr = media_capture_async.AsAgile(
+@@ -219,13 +191,23 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+              : E_FAIL;
+   }
+ 
++  if (SUCCEEDED(hr)) {
++    *pp_media_capture = media_capture.Detach();
++  } else {
++    *pp_media_capture = nullptr;
++  }
++
+   return hr;
+ }
+ 
+-uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
++uint32_t SafelyComputeMediaRatio(_In_ IMediaRatio* ratio_no_ref) {
+   uint32_t numerator, denominator, media_ratio = 0;
+ 
+-  HRESULT hr = ratio_no_ref->get_Numerator(&numerator);
++  HRESULT hr = S_OK;
++
++  if (SUCCEEDED(hr)) {
++    hr = ratio_no_ref->get_Numerator(&numerator);
++  }
+ 
+   if (SUCCEEDED(hr)) {
+     hr = ratio_no_ref->get_Denominator(&denominator);
+@@ -238,7 +220,7 @@ uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
+   return media_ratio;
+ }
+ 
+-VideoType ToVideoType(const HString& sub_type) {
++VideoType ToVideoType(_In_ const HString& sub_type) {
+   uint32_t cchCount;
+   const wchar_t* video_type = sub_type.GetRawBuffer(&cchCount);
+   VideoType converted_type = VideoType::kUnknown;
+@@ -272,25 +254,30 @@ VideoType ToVideoType(const HString& sub_type) {
+   return converted_type;
+ }
+ 
+-HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
++HRESULT GetMainViewDispatcher(
++    _COM_Outptr_ ICoreDispatcher** main_view_dispatcher) {
+   ComPtr<IActivationFactory> activation_factory;
+   ComPtr<ICoreApplication> coreApplication;
+   ComPtr<ICoreImmersiveApplication> immersiveApplication;
+   ComPtr<ICoreApplicationView> applicationView;
+   ComPtr<ICoreWindow> coreWindow;
+ 
+-  HRESULT hr = GetActivationFactory(
+-      HStringReference(
+-          RuntimeClass_Windows_ApplicationModel_Core_CoreApplication)
+-          .Get(),
+-      &activation_factory);
++  HRESULT hr = S_OK;
++
++  if (SUCCEEDED(hr)) {
++    hr = GetActivationFactory(
++        HStringReference(
++            RuntimeClass_Windows_ApplicationModel_Core_CoreApplication)
++            .Get(),
++        &activation_factory);
++  }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = activation_factory.As<ICoreApplication>(&coreApplication);
++    hr = activation_factory.As(&coreApplication);
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = coreApplication.As<ICoreImmersiveApplication>(&immersiveApplication);
++    hr = coreApplication.As(&immersiveApplication);
+   }
+ 
+   if (SUCCEEDED(hr)) {
+@@ -308,9 +295,82 @@ HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
+   return hr;
+ }
+ 
+-HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
++// Creates the settings that will be used to select the capture device and its
++// configuration.
++HRESULT CreateMediaCaptureInitializationSettings(
++    _In_ const HStringReference& device_id,
++    _In_ IMediaCaptureVideoProfile* video_profile,
++    _In_ IMediaCaptureVideoProfileMediaDescription* profile_description,
++    _COM_Outptr_ IMediaCaptureInitializationSettings**
++        pp_initialization_settings) {
++  HRESULT hr = S_OK;
++  ComPtr<IMediaCaptureInitializationSettings> init_settings;
++  ComPtr<IMediaCaptureInitializationSettings4> init_settings4;
++  ComPtr<IMediaCaptureInitializationSettings5> init_settings5;
++
++  if (SUCCEEDED(hr)) {
++    hr = ActivateInstance(
++        HStringReference(
++            RuntimeClass_Windows_Media_Capture_MediaCaptureInitializationSettings)
++            .Get(),
++        &init_settings);
++  }
++
++  // There are two ways to specify which configuration from a camera to use.
++  // For devices that support video capture profile, video_profile and
++  // profile_description should be defined. For cameras that do not support
++  // profiles, device_id should be defined. Keep in mind that device_id might be
++  // populated for cameras with profile, but its content will not be useful for
++  // put_VideoDeviceId (the content looks like a camera id, but it is post fixed
++  // by a comma and a profile id).
++  if (SUCCEEDED(hr) && !video_profile && !profile_description) {
++    unsigned int length;
++    device_id.GetRawBuffer(&length);
++    if (length > 0) {
++      hr = init_settings->put_VideoDeviceId(device_id.Get());
++    }
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = init_settings->put_StreamingCaptureMode(
++        StreamingCaptureMode::StreamingCaptureMode_Video);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = init_settings.As(&init_settings4);
++  }
++
++  if (SUCCEEDED(hr) && video_profile) {
++    hr = init_settings4->put_VideoProfile(video_profile);
++  }
++
++  if (SUCCEEDED(hr) && profile_description) {
++    hr = init_settings4->put_RecordMediaDescription(profile_description);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = init_settings.As(&init_settings5);
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = init_settings5->put_MemoryPreference(
++        MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu);
++  }
++
++  if (SUCCEEDED(hr)) {
++    *pp_initialization_settings = init_settings.Detach();
++  } else {
++    *pp_initialization_settings = nullptr;
++  }
++
++  return hr;
++}
++
++HRESULT WaitForAsyncAction(
++    _In_ ::ABI::Windows::Foundation::IAsyncAction* p_async_action) {
+   HRESULT hr = S_OK;
+   HRESULT hr_async_error = S_OK;
++  ComPtr<IAsyncAction> async_action(p_async_action);
+   ComPtr<IAsyncInfo> async_info;
+   Event event_completed;
+   const DWORD timeout_ms = 2000;
+@@ -358,7 +418,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+ 
+   // Checks if async operation completed successfully.
+   if (SUCCEEDED(hr)) {
+-    hr = async_action.As<IAsyncInfo>(&async_info);
++    hr = async_action.As(&async_info);
+   }
+ 
+   if (SUCCEEDED(hr)) {
+@@ -370,7 +430,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+   }
+ 
+   return hr;
+-}
++}  // namespace videocapturemodule
+ 
+ }  // namespace videocapturemodule
+ }  // namespace webrtc
+diff --git a/modules/video_capture/windows/help_functions_winrt.h b/modules/video_capture/windows/help_functions_winrt.h
+index 9dae10bcf0..e1e2ccbb18 100644
+--- a/modules/video_capture/windows/help_functions_winrt.h
++++ b/modules/video_capture/windows/help_functions_winrt.h
+@@ -27,26 +27,33 @@ namespace webrtc {
+ namespace videocapturemodule {
+ 
+ uint32_t SafelyComputeMediaRatio(
+-    ::ABI::Windows::Media::MediaProperties::IMediaRatio* ratio_no_ref);
++    _In_ ::ABI::Windows::Media::MediaProperties::IMediaRatio* ratio_no_ref);
+ 
+-VideoType ToVideoType(const Microsoft::WRL::Wrappers::HString& sub_type);
++VideoType ToVideoType(_In_ const ::Microsoft::WRL::Wrappers::HString& sub_type);
+ 
+ HRESULT GetMainViewDispatcher(
+-    ::ABI::Windows::UI::Core::ICoreDispatcher** dispatcher);
+-
+-HRESULT GetMediaCaptureForDevice(
+-    HSTRING device_id,
+-    ::Microsoft::WRL::ComPtr<::ABI::Windows::Media::Capture::IMediaCapture>&
+-        media_capture);
++    _COM_Outptr_ ::ABI::Windows::UI::Core::ICoreDispatcher** dispatcher);
++
++HRESULT CreateMediaCaptureInitializationSettings(
++    _In_ const ::Microsoft::WRL::Wrappers::HStringReference& device_id,
++    _In_ ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfile*
++        media_profile,
++    _In_ ::ABI::Windows::Media::Capture::
++        IMediaCaptureVideoProfileMediaDescription* profile_description,
++    _COM_Outptr_ ::ABI::Windows::Media::Capture::
++        IMediaCaptureInitializationSettings** pp_initialization_settings);
++
++HRESULT GetMediaCaptureWithInitSettings(
++    _In_ ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings*
++        initialization_settings,
++    _COM_Outptr_ ::ABI::Windows::Media::Capture::IMediaCapture** media_capture);
+ 
+ HRESULT WaitForAsyncAction(
+-    ::Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncAction>
+-        async_action);
++    _In_ ::ABI::Windows::Foundation::IAsyncAction* async_action);
+ 
+ template <typename T>
+ HRESULT WaitForAsyncOperation(
+-    ::Microsoft::WRL::ComPtr<ABI::Windows::Foundation::IAsyncOperation<T>>&
+-        async_op) {
++    _In_ ::ABI::Windows::Foundation::IAsyncOperation<T>* p_async_op) {
+   using ::ABI::Windows::Foundation::AsyncStatus;
+   using ::ABI::Windows::Foundation::IAsyncInfo;
+   using ::ABI::Windows::Foundation::IAsyncOperation;
+@@ -57,6 +64,7 @@ HRESULT WaitForAsyncOperation(
+   HRESULT hr = S_OK;
+   HRESULT hr_async_error = S_OK;
+   const DWORD timeout_ms = 2000;
++  ComPtr<IAsyncOperation<T>> async_op(p_async_op);
+   ComPtr<IAsyncInfo> async_info;
+   Event event_completed;
+ 
+@@ -73,9 +81,11 @@ HRESULT WaitForAsyncOperation(
+ 
+   // Creates the Event to be used to block and suspend until the async
+   // operation finishes.
+-  event_completed =
+-      Event(::CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
+-                            WRITE_OWNER | EVENT_ALL_ACCESS));
++  if (SUCCEEDED(hr)) {
++    event_completed =
++        Event(::CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
++                              WRITE_OWNER | EVENT_ALL_ACCESS));
++  }
+   if (SUCCEEDED(hr)) {
+     hr = event_completed.IsValid() ? S_OK : E_HANDLE;
+   }
+diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
+index a41fccfdb1..c7e2094867 100644
+--- a/modules/video_capture/windows/video_capture_winrt.cc
++++ b/modules/video_capture/windows/video_capture_winrt.cc
+@@ -52,6 +52,8 @@ using ::ABI::Windows::Media::Capture::IMediaCapture;
+ using ::ABI::Windows::Media::Capture::IMediaCapture5;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings;
+ using ::ABI::Windows::Media::Capture::IMediaCaptureInitializationSettings5;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfile;
++using ::ABI::Windows::Media::Capture::IMediaCaptureVideoProfileMediaDescription;
+ using ::ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
+ using ::ABI::Windows::Media::Capture::MediaStreamType;
+ using ::ABI::Windows::Media::Capture::StreamingCaptureMode;
+@@ -108,7 +110,6 @@ struct VideoCaptureWinRTInternal {
+ 
+   ~VideoCaptureWinRTInternal();
+ 
+-  HRESULT InitCamera(const wchar_t* pDeviceId);
+   HRESULT StartCapture(const VideoCaptureCapability& capability);
+   HRESULT StopCapture();
+   bool CaptureStarted();
+@@ -131,50 +132,15 @@ VideoCaptureWinRTInternal::VideoCaptureWinRTInternal(
+     : pfn_incoming_frame_(pfn_incoming_frame) {}
+ 
+ VideoCaptureWinRTInternal::~VideoCaptureWinRTInternal() {
+-  if (media_capture_) {
+-    ComPtr<IClosable> closable;
+-
+-    HRESULT hr = StopCapture();
+-    if (SUCCEEDED(hr)) {
+-      hr = media_capture_.As(&closable);
+-    }
+-    if (SUCCEEDED(hr)) {
+-      hr = closable->Close();
+-    }
+-    assert(SUCCEEDED(hr));
+-  }
+-}
+-
+-HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
+   HRESULT hr = S_OK;
+-  HStringReference device_id(device_unique_id);
+-
+-  if (media_capture_) {
+-    ComPtr<IClosable> closable_media_capture;
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = media_capture_.As(&closable_media_capture);
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = StopCapture() == 0 ? S_OK : E_FAIL;
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = closable_media_capture->Close();
+-    }
+-  }
+-
+-  if (SUCCEEDED(hr)) {
+-    hr = GetMediaCaptureForDevice(device_id.Get(), media_capture_);
+-  }
+-
+-  return hr;
++  hr = StopCapture();
++  assert(SUCCEEDED(hr));
+ }
+ 
+ HRESULT VideoCaptureWinRTInternal::StartCapture(
+     const VideoCaptureCapability& capability) {
+   HRESULT hr = S_OK;
++  ComPtr<IMediaCaptureInitializationSettings> initialization_settings;
+   ComPtr<IMediaFrameSource> media_frame_source;
+   ComPtr<IMediaCapture5> media_capture5;
+   ComPtr<IMapView<HSTRING, MediaFrameSource*>> frame_sources;
+@@ -184,9 +150,33 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+   ComPtr<IAsyncOperation<MediaFrameReader*>> async_operation;
+   ComPtr<IAsyncOperation<MediaFrameReaderStartStatus>>
+       async_media_frame_reader_start_status;
++  ComPtr<IMediaCaptureVideoProfile> video_profile;
++  ComPtr<IMediaCaptureVideoProfileMediaDescription> profile_description;
++  HStringReference device_id(capability.profile_id.c_str());
+   MediaFrameReaderStartStatus media_frame_reader_start_status;
+   boolean has_current;
+ 
++  if (SUCCEEDED(hr) && capability.media_capture_video_profile) {
++    hr = capability.media_capture_video_profile->QueryInterface(
++        video_profile.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr) && capability.record_media_description) {
++    hr = capability.record_media_description->QueryInterface(
++        profile_description.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = CreateMediaCaptureInitializationSettings(
++        device_id, video_profile.Get(), profile_description.Get(),
++        initialization_settings.ReleaseAndGetAddressOf());
++  }
++
++  if (SUCCEEDED(hr)) {
++    hr = GetMediaCaptureWithInitSettings(
++        initialization_settings.Get(), media_capture_.ReleaseAndGetAddressOf());
++  }
++
+   if (SUCCEEDED(hr)) {
+     hr = media_capture_.As(&media_capture5);
+   }
+@@ -323,7 +313,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+       }
+ 
+       if (SUCCEEDED(hr)) {
+-        hr = WaitForAsyncAction(async_action);
++        hr = WaitForAsyncAction(async_action.Get());
+       }
+ 
+       break;
+@@ -349,7 +339,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = WaitForAsyncOperation(async_operation);
++    hr = WaitForAsyncOperation(async_operation.Get());
+   }
+ 
+   // Assigns a new media frame reader
+@@ -375,7 +365,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+   }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = WaitForAsyncOperation(async_media_frame_reader_start_status);
++    hr = WaitForAsyncOperation(async_media_frame_reader_start_status.Get());
+   }
+ 
+   if (SUCCEEDED(hr)) {
+@@ -401,11 +391,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+   HRESULT hr = S_OK;
+ 
+-  if (!media_frame_reader_) {
+-    return hr;
+-  }
+-
+-  if (is_capturing) {
++  if (media_frame_reader_) {
+     ComPtr<IAsyncAction> async_action;
+ 
+     if (SUCCEEDED(hr)) {
+@@ -418,7 +404,19 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+     }
+ 
+     if (SUCCEEDED(hr)) {
+-      hr = WaitForAsyncAction(async_action);
++      hr = WaitForAsyncAction(async_action.Get());
++    }
++  }
++
++  if (media_capture_) {
++    ComPtr<IClosable> closable_media_capture;
++
++    if (SUCCEEDED(hr)) {
++      hr = media_capture_.As(&closable_media_capture);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = closable_media_capture->Close();
+     }
+   }
+ 
+@@ -427,6 +425,7 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+   }
+ 
+   media_frame_reader_.Reset();
++  media_capture_.Reset();
+ 
+   return hr;
+ }
+@@ -648,11 +647,6 @@ int32_t VideoCaptureWinRT::Init(const char* device_unique_id_UTF8) {
+     return -1;
+   }
+ 
+-  // Initializes the camera with desired settings
+-  if (Impl(video_capture_internal_)->InitCamera(device_id_w)) {
+-    return -1;
+-  }
+-
+   return 0;
+ }
+ 
+-- 
+2.21.0.windows.1
+
