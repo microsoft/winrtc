@@ -1,4 +1,4 @@
-From e69d43b085062ce6d5ae2acb5f776c4533f81344 Mon Sep 17 00:00:00 2001
+From 381ab553024b57b880054ea04406ed700911b244 Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Wed, 10 Jun 2020 17:01:45 -0700
 Subject: [PATCH] Adding video profiles capabilities to the video capture
@@ -8,13 +8,13 @@ Subject: [PATCH] Adding video profiles capabilities to the video capture
  modules/video_capture/BUILD.gn                |   5 +
  modules/video_capture/video_capture_defines.h |  33 +-
  .../windows/device_info_winrt.cc              | 431 ++++++++++++++----
- .../windows/help_functions_winrt.cc           | 187 +++++---
+ .../windows/help_functions_winrt.cc           | 190 +++++---
  .../windows/help_functions_winrt.h            |  40 +-
- .../windows/video_capture_winrt.cc            |  43 +-
- 6 files changed, 563 insertions(+), 176 deletions(-)
+ .../windows/video_capture_winrt.cc            | 100 ++--
+ 6 files changed, 570 insertions(+), 229 deletions(-)
 
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index 61b19993e0..67e75968b7 100644
+index 61b19993e0..50a1788404 100644
 --- a/modules/video_capture/BUILD.gn
 +++ b/modules/video_capture/BUILD.gn
 @@ -14,6 +14,11 @@ import("../../webrtc.gni")
@@ -22,7 +22,7 @@ index 61b19993e0..67e75968b7 100644
  rtc_library("video_capture_module") {
    visibility = [ "*" ]
 +
-+  if (is_win && rtc_win_video_capture_winrt) {
++  if (rtc_win_video_capture_winrt) {
 +    defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
 +  }
 +
@@ -602,7 +602,7 @@ index 3e21c292cc..a280e3e140 100644
  
    if (SUCCEEDED(hr)) {
 diff --git a/modules/video_capture/windows/help_functions_winrt.cc b/modules/video_capture/windows/help_functions_winrt.cc
-index 285abca235..7155d4fef4 100644
+index 285abca235..94c623a55c 100644
 --- a/modules/video_capture/windows/help_functions_winrt.cc
 +++ b/modules/video_capture/windows/help_functions_winrt.cc
 @@ -26,7 +26,10 @@ using ::ABI::Windows::Media::Capture::IMediaCapture;
@@ -616,17 +616,17 @@ index 285abca235..7155d4fef4 100644
  using ::ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
  using ::ABI::Windows::Media::Capture::StreamingCaptureMode;
  using ::ABI::Windows::Media::MediaProperties::IMediaRatio;
-@@ -49,54 +52,31 @@ using ::Microsoft::WRL::Wrappers::HStringReference;
+@@ -49,54 +52,11 @@ using ::Microsoft::WRL::Wrappers::HStringReference;
  namespace webrtc {
  namespace videocapturemodule {
  
 -HRESULT InitializeMediaCapture(const AgileRef& media_capture_agile,
 -                               const HSTRING& device_id,
 -                               ComPtr<IAsyncAction>& media_capture_async) {
-+HRESULT InitializeMediaCapture(
-+    _In_ IMediaCaptureInitializationSettings* init_settings,
-+    _In_ const AgileRef& media_capture_agile,
-+    _COM_Outptr_ IAsyncAction** media_capture_async) {
++HRESULT GetMediaCaptureWithInitSettings(
++    _In_ IMediaCaptureInitializationSettings* initialization_settings,
++    _COM_Outptr_ IMediaCapture** pp_media_capture) {
++  HRESULT hr = S_OK;
    ComPtr<IMediaCapture> media_capture;
 -  ComPtr<IMediaCaptureInitializationSettings> init_settings;
 -  ComPtr<IMediaCaptureInitializationSettings5> init_settings5;
@@ -642,7 +642,7 @@ index 285abca235..7155d4fef4 100644
 -            .Get(),
 -        &init_settings);
 -  }
- 
+-
 -  if (SUCCEEDED(hr)) {
 -    hr = init_settings->put_StreamingCaptureMode(
 -        StreamingCaptureMode::StreamingCaptureMode_Video);
@@ -657,34 +657,25 @@ index 285abca235..7155d4fef4 100644
 -    hr = init_settings5->put_MemoryPreference(
 -        MediaCaptureMemoryPreference::MediaCaptureMemoryPreference_Cpu);
 -  }
-+  HRESULT hr = S_OK;
- 
-   if (SUCCEEDED(hr)) {
+-
+-  if (SUCCEEDED(hr)) {
 -    hr = init_settings->put_VideoDeviceId(device_id);
-+    hr = media_capture_agile.As(&media_capture);
-   }
- 
-   if (SUCCEEDED(hr)) {
+-  }
+-
+-  if (SUCCEEDED(hr)) {
 -    hr = media_capture->InitializeWithSettingsAsync(init_settings.Get(),
 -                                                    &media_capture_async);
-+    hr = media_capture->InitializeWithSettingsAsync(init_settings,
-+                                                    media_capture_async);
-   }
- 
-   return hr;
- }
- 
+-  }
+-
+-  return hr;
+-}
+-
 -HRESULT GetMediaCaptureForDevice(HSTRING device_id,
 -                                 ComPtr<IMediaCapture>& media_capture) {
-+HRESULT GetMediaCaptureWithInitSettings(
-+    _In_ IMediaCaptureInitializationSettings* initialization_settings,
-+    _COM_Outptr_ IMediaCapture** pp_media_capture) {
-+  HRESULT hr = S_OK;
-+  ComPtr<IMediaCapture> media_capture;
    ComPtr<ICoreDispatcher> main_view_dispatcher;
    ComPtr<IAsyncAction> async_action_ui_dispatcher;
    ComPtr<IAsyncAction> async_action_media_capture;
-@@ -107,7 +87,9 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+@@ -107,7 +67,9 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
    boolean has_thread_access;
  
    // Acquires the main view dispacther (UI thread).
@@ -695,7 +686,7 @@ index 285abca235..7155d4fef4 100644
  
    // We'll be dispatching and waiting for code from the UI thread.
    // Let's make sure this is not the UI thread.
-@@ -153,15 +135,22 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+@@ -153,10 +115,20 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
                              FtmBase>>(
              [&event_wait_for_media_capture_async_action,
               &async_action_media_capture_agile, &media_capture_agile,
@@ -709,20 +700,17 @@ index 285abca235..7155d4fef4 100644
 +
 +              if (SUCCEEDED(hr)) {
 +                hr = media_capture_agile.As(&media_capture);
++              }
 +
 +              if (SUCCEEDED(hr)) {
 +                hr = media_capture->InitializeWithSettingsAsync(
 +                    initialization_settings,
 +                    media_capture_async.ReleaseAndGetAddressOf());
++              }
  
                if (SUCCEEDED(hr)) {
                  hr = media_capture_async.AsAgile(
-                     &async_action_media_capture_agile);
--              }
- 
-               ::SetEvent(event_wait_for_media_capture_async_action.Get());
- 
-@@ -219,13 +208,23 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
+@@ -219,13 +191,23 @@ HRESULT GetMediaCaptureForDevice(HSTRING device_id,
               : E_FAIL;
    }
  
@@ -748,7 +736,7 @@ index 285abca235..7155d4fef4 100644
  
    if (SUCCEEDED(hr)) {
      hr = ratio_no_ref->get_Denominator(&denominator);
-@@ -238,7 +237,7 @@ uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
+@@ -238,7 +220,7 @@ uint32_t SafelyComputeMediaRatio(IMediaRatio* ratio_no_ref) {
    return media_ratio;
  }
  
@@ -757,7 +745,7 @@ index 285abca235..7155d4fef4 100644
    uint32_t cchCount;
    const wchar_t* video_type = sub_type.GetRawBuffer(&cchCount);
    VideoType converted_type = VideoType::kUnknown;
-@@ -272,25 +271,30 @@ VideoType ToVideoType(const HString& sub_type) {
+@@ -272,25 +254,30 @@ VideoType ToVideoType(const HString& sub_type) {
    return converted_type;
  }
  
@@ -776,27 +764,27 @@ index 285abca235..7155d4fef4 100644
 -          .Get(),
 -      &activation_factory);
 +  HRESULT hr = S_OK;
- 
-   if (SUCCEEDED(hr)) {
--    hr = activation_factory.As<ICoreApplication>(&coreApplication);
++
++  if (SUCCEEDED(hr)) {
 +    hr = GetActivationFactory(
 +        HStringReference(
 +            RuntimeClass_Windows_ApplicationModel_Core_CoreApplication)
 +            .Get(),
 +        &activation_factory);
++  }
+ 
+   if (SUCCEEDED(hr)) {
+-    hr = activation_factory.As<ICoreApplication>(&coreApplication);
++    hr = activation_factory.As(&coreApplication);
    }
  
    if (SUCCEEDED(hr)) {
 -    hr = coreApplication.As<ICoreImmersiveApplication>(&immersiveApplication);
-+    hr = activation_factory.As(&coreApplication);
-+  }
-+
-+  if (SUCCEEDED(hr)) {
 +    hr = coreApplication.As(&immersiveApplication);
    }
  
    if (SUCCEEDED(hr)) {
-@@ -308,9 +312,82 @@ HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
+@@ -308,9 +295,82 @@ HRESULT GetMainViewDispatcher(ICoreDispatcher** main_view_dispatcher) {
    return hr;
  }
  
@@ -880,7 +868,7 @@ index 285abca235..7155d4fef4 100644
    ComPtr<IAsyncInfo> async_info;
    Event event_completed;
    const DWORD timeout_ms = 2000;
-@@ -358,7 +435,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+@@ -358,7 +418,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
  
    // Checks if async operation completed successfully.
    if (SUCCEEDED(hr)) {
@@ -889,7 +877,7 @@ index 285abca235..7155d4fef4 100644
    }
  
    if (SUCCEEDED(hr)) {
-@@ -370,7 +447,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
+@@ -370,7 +430,7 @@ HRESULT WaitForAsyncAction(ComPtr<IAsyncAction> async_action) {
    }
  
    return hr;
@@ -972,7 +960,7 @@ index 9dae10bcf0..e1e2ccbb18 100644
      hr = event_completed.IsValid() ? S_OK : E_HANDLE;
    }
 diff --git a/modules/video_capture/windows/video_capture_winrt.cc b/modules/video_capture/windows/video_capture_winrt.cc
-index a41fccfdb1..a0a323e64b 100644
+index a41fccfdb1..c7e2094867 100644
 --- a/modules/video_capture/windows/video_capture_winrt.cc
 +++ b/modules/video_capture/windows/video_capture_winrt.cc
 @@ -52,6 +52,8 @@ using ::ABI::Windows::Media::Capture::IMediaCapture;
@@ -984,27 +972,59 @@ index a41fccfdb1..a0a323e64b 100644
  using ::ABI::Windows::Media::Capture::MediaCaptureMemoryPreference;
  using ::ABI::Windows::Media::Capture::MediaStreamType;
  using ::ABI::Windows::Media::Capture::StreamingCaptureMode;
-@@ -145,9 +147,9 @@ VideoCaptureWinRTInternal::~VideoCaptureWinRTInternal() {
-   }
- }
+@@ -108,7 +110,6 @@ struct VideoCaptureWinRTInternal {
  
+   ~VideoCaptureWinRTInternal();
+ 
+-  HRESULT InitCamera(const wchar_t* pDeviceId);
+   HRESULT StartCapture(const VideoCaptureCapability& capability);
+   HRESULT StopCapture();
+   bool CaptureStarted();
+@@ -131,50 +132,15 @@ VideoCaptureWinRTInternal::VideoCaptureWinRTInternal(
+     : pfn_incoming_frame_(pfn_incoming_frame) {}
+ 
+ VideoCaptureWinRTInternal::~VideoCaptureWinRTInternal() {
+-  if (media_capture_) {
+-    ComPtr<IClosable> closable;
+-
+-    HRESULT hr = StopCapture();
+-    if (SUCCEEDED(hr)) {
+-      hr = media_capture_.As(&closable);
+-    }
+-    if (SUCCEEDED(hr)) {
+-      hr = closable->Close();
+-    }
+-    assert(SUCCEEDED(hr));
+-  }
+-}
+-
 -HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
-+HRESULT VideoCaptureWinRTInternal::InitCamera(
-+    const wchar_t* /*device_unique_id FIXME */) {
    HRESULT hr = S_OK;
 -  HStringReference device_id(device_unique_id);
- 
-   if (media_capture_) {
-     ComPtr<IClosable> closable_media_capture;
-@@ -165,16 +167,13 @@ HRESULT VideoCaptureWinRTInternal::InitCamera(const wchar_t* device_unique_id) {
-     }
-   }
- 
+-
+-  if (media_capture_) {
+-    ComPtr<IClosable> closable_media_capture;
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = media_capture_.As(&closable_media_capture);
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = StopCapture() == 0 ? S_OK : E_FAIL;
+-    }
+-
+-    if (SUCCEEDED(hr)) {
+-      hr = closable_media_capture->Close();
+-    }
+-  }
+-
 -  if (SUCCEEDED(hr)) {
 -    hr = GetMediaCaptureForDevice(device_id.Get(), media_capture_);
 -  }
 -
-   return hr;
+-  return hr;
++  hr = StopCapture();
++  assert(SUCCEEDED(hr));
  }
  
  HRESULT VideoCaptureWinRTInternal::StartCapture(
@@ -1014,7 +1034,7 @@ index a41fccfdb1..a0a323e64b 100644
    ComPtr<IMediaFrameSource> media_frame_source;
    ComPtr<IMediaCapture5> media_capture5;
    ComPtr<IMapView<HSTRING, MediaFrameSource*>> frame_sources;
-@@ -184,9 +183,33 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -184,9 +150,33 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
    ComPtr<IAsyncOperation<MediaFrameReader*>> async_operation;
    ComPtr<IAsyncOperation<MediaFrameReaderStartStatus>>
        async_media_frame_reader_start_status;
@@ -1048,7 +1068,7 @@ index a41fccfdb1..a0a323e64b 100644
    if (SUCCEEDED(hr)) {
      hr = media_capture_.As(&media_capture5);
    }
-@@ -323,7 +346,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -323,7 +313,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
        }
  
        if (SUCCEEDED(hr)) {
@@ -1057,7 +1077,7 @@ index a41fccfdb1..a0a323e64b 100644
        }
  
        break;
-@@ -349,7 +372,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -349,7 +339,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
    }
  
    if (SUCCEEDED(hr)) {
@@ -1066,7 +1086,7 @@ index a41fccfdb1..a0a323e64b 100644
    }
  
    // Assigns a new media frame reader
-@@ -375,7 +398,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+@@ -375,7 +365,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
    }
  
    if (SUCCEEDED(hr)) {
@@ -1075,14 +1095,59 @@ index a41fccfdb1..a0a323e64b 100644
    }
  
    if (SUCCEEDED(hr)) {
-@@ -418,7 +441,7 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+@@ -401,11 +391,7 @@ HRESULT VideoCaptureWinRTInternal::StartCapture(
+ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+   HRESULT hr = S_OK;
+ 
+-  if (!media_frame_reader_) {
+-    return hr;
+-  }
+-
+-  if (is_capturing) {
++  if (media_frame_reader_) {
+     ComPtr<IAsyncAction> async_action;
+ 
+     if (SUCCEEDED(hr)) {
+@@ -418,7 +404,19 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
      }
  
      if (SUCCEEDED(hr)) {
 -      hr = WaitForAsyncAction(async_action);
 +      hr = WaitForAsyncAction(async_action.Get());
++    }
++  }
++
++  if (media_capture_) {
++    ComPtr<IClosable> closable_media_capture;
++
++    if (SUCCEEDED(hr)) {
++      hr = media_capture_.As(&closable_media_capture);
++    }
++
++    if (SUCCEEDED(hr)) {
++      hr = closable_media_capture->Close();
      }
    }
+ 
+@@ -427,6 +425,7 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
+   }
+ 
+   media_frame_reader_.Reset();
++  media_capture_.Reset();
+ 
+   return hr;
+ }
+@@ -648,11 +647,6 @@ int32_t VideoCaptureWinRT::Init(const char* device_unique_id_UTF8) {
+     return -1;
+   }
+ 
+-  // Initializes the camera with desired settings
+-  if (Impl(video_capture_internal_)->InitCamera(device_id_w)) {
+-    return -1;
+-  }
+-
+   return 0;
+ }
  
 -- 
 2.21.0.windows.1
