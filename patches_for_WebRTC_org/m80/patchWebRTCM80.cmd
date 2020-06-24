@@ -36,6 +36,7 @@ git.exe am "%PATCH_DIR%0007.1-BUG-Requested-camera-settings-were-not-being-honor
 git.exe am "%PATCH_DIR%0007.2-Properly-handling-async-model-for-initializing-Media.patch"
 git.exe am "%PATCH_DIR%0007.4-Adding-video-profiles-capabilities-to-the-video-capt.patch"
 git.exe am "%PATCH_DIR%0007.5-Porting-H264-encoder-from-the-WebRTC-UWP-project.patch"
+git.exe am "%PATCH_DIR%0007.6-Porting-H264-decoder-from-WebRTC-UWP.patch"
 git.exe am "%PATCH_DIR%0008-Fixing-UWP-build-for-modules-audio_device.patch"
 git.exe am "%PATCH_DIR%6401-Shift-operator-in-Arm-doesn-t-work-the-same-as-Intel.patch"
 popd
