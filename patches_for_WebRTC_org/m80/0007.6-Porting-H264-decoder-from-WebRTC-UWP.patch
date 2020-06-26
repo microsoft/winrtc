@@ -1,0 +1,744 @@
+From 21f8538dad5cf738b7b6a0df473ef6b9b372b6ed Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Tue, 23 Jun 2020 18:06:50 -0700
+Subject: [PATCH] Porting H264 decoder from WebRTC-UWP
+
+---
+ modules/video_coding/BUILD.gn                 |   2 +
+ .../{ => win/decoder}/h264_decoder_mf_impl.cc | 263 +++++++++---------
+ .../{ => win/decoder}/h264_decoder_mf_impl.h  |  59 ++--
+ .../codecs/h264/win/h264_mf_factory.cc        |  25 +-
+ .../codecs/h264/win/h264_mf_factory.h         |  15 +-
+ 5 files changed, 187 insertions(+), 177 deletions(-)
+ rename modules/video_coding/codecs/h264/{ => win/decoder}/h264_decoder_mf_impl.cc (70%)
+ rename modules/video_coding/codecs/h264/{ => win/decoder}/h264_decoder_mf_impl.h (52%)
+
+diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
+index 64d47e3a6b..23b3bbe354 100644
+--- a/modules/video_coding/BUILD.gn
++++ b/modules/video_coding/BUILD.gn
+@@ -336,6 +336,8 @@ rtc_library("webrtc_h264") {
+       "codecs/h264/win/utils/crit_sec.h",
+       "codecs/h264/win/utils/utils.h",
+       "codecs/h264/win/utils/sample_attribute_queue.h",
++      "codecs/h264/win/decoder/h264_decoder_mf_impl.cc",
++      "codecs/h264/win/decoder/h264_decoder_mf_impl.h",
+       "codecs/h264/win/encoder/h264_encoder_mf_impl.cc",
+       "codecs/h264/win/encoder/h264_encoder_mf_impl.h",
+       "codecs/h264/win/encoder/h264_media_sink.cc",
+diff --git a/modules/video_coding/codecs/h264/h264_decoder_mf_impl.cc b/modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.cc
+similarity index 70%
+rename from modules/video_coding/codecs/h264/h264_decoder_mf_impl.cc
+rename to modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.cc
+index a2964cd83f..7c7382289c 100644
+--- a/modules/video_coding/codecs/h264/h264_decoder_mf_impl.cc
++++ b/modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.cc
+@@ -6,10 +6,9 @@
+  *  tree. An additional intellectual property rights grant can be found
+  *  in the file PATENTS.  All contributing project authors may
+  *  be found in the AUTHORS file in the root of the source tree.
+- *
+  */
+ 
+-#include "modules/video_coding/codecs/h264/h264_decoder_mf_impl.h"
++#include "modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h"
+ 
+ #include <Windows.h>
+ #include <codecapi.h>
+@@ -20,43 +19,22 @@
+ #include <robuffer.h>
+ #include <wrl.h>
+ #include <wrl\implements.h>
+-#include <algorithm>
+ #include <iomanip>
+-#include <limits>
+-#include <memory>
+ #include "common_video/include/video_frame_buffer.h"
+ #include "libyuv/convert.h"
++#include "modules/video_coding/codecs/h264/win/utils/utils.h"
+ #include "modules/video_coding/include/video_codec_interface.h"
+ #include "rtc_base/checks.h"
+ #include "rtc_base/logging.h"
+ 
+-#pragma comment(lib, "mfreadwrite")
+-#pragma comment(lib, "mfplat")
+-#pragma comment(lib, "mfuuid.lib")
+-
+-using Microsoft::WRL::ComPtr;
+-#define ON_SUCCEEDED(act)                      \
+-  if (SUCCEEDED(hr)) {                         \
+-    hr = act;                                  \
+-    if (FAILED(hr)) {                          \
+-      RTC_LOG(LS_WARNING) << "ERROR:" << #act; \
+-    }                                          \
+-  }
+-
+-#include "api/video/color_space.h"
+-#include "api/video/i010_buffer.h"
+-#include "api/video/i420_buffer.h"
+-#include "common_video/include/video_frame_buffer.h"
+-#include "modules/video_coding/codecs/h264/h264_color_space.h"
+-#include "rtc_base/checks.h"
+-#include "rtc_base/critical_section.h"
+-#include "rtc_base/keep_ref_until_done.h"
+-#include "rtc_base/logging.h"
+-#include "system_wrappers/include/field_trial.h"
+-#include "system_wrappers/include/metrics.h"
++using ::Microsoft::WRL::ComPtr;
+ 
+ namespace webrtc {
+ 
++//////////////////////////////////////////
++// H264 WinUWP Decoder Implementation
++//////////////////////////////////////////
++
+ H264DecoderMFImpl::H264DecoderMFImpl()
+     : buffer_pool_(false, 300), /* max_number_of_buffers*/
+       width_(absl::nullopt),
+@@ -64,11 +42,13 @@ H264DecoderMFImpl::H264DecoderMFImpl()
+       decode_complete_callback_(nullptr) {}
+ 
+ H264DecoderMFImpl::~H264DecoderMFImpl() {
+-  OutputDebugString(L"H264DecoderMFImpl::~WinUWPH264DecoderImpl()\n");
++  OutputDebugString(L"H264DecoderMFImpl::~H264DecoderMFImpl()\n");
+   Release();
+ }
+ 
+-HRESULT ConfigureOutputMediaType(ComPtr<IMFTransform> decoder, GUID media_type, bool* type_found) {
++HRESULT ConfigureOutputMediaType(ComPtr<IMFTransform> decoder,
++                                 GUID media_type,
++                                 bool* type_found) {
+   HRESULT hr = S_OK;
+   *type_found = false;
+ 
+@@ -103,41 +83,42 @@ HRESULT CreateInputMediaType(IMFMediaType** pp_input_media,
+   IMFMediaType* input_media = *pp_input_media;
+   ON_SUCCEEDED(input_media->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
+   ON_SUCCEEDED(input_media->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264));
+-  ON_SUCCEEDED(MFSetAttributeRatio(input_media, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
+-  ON_SUCCEEDED(input_media->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_MixedInterlaceOrProgressive));
++  ON_SUCCEEDED(
++      MFSetAttributeRatio(input_media, MF_MT_PIXEL_ASPECT_RATIO, 1, 1));
++  ON_SUCCEEDED(input_media->SetUINT32(
++      MF_MT_INTERLACE_MODE, MFVideoInterlace_MixedInterlaceOrProgressive));
+ 
+   if (frame_rate.has_value()) {
+-    ON_SUCCEEDED(MFSetAttributeRatio(input_media, MF_MT_FRAME_RATE, frame_rate.value(), 1));
++    ON_SUCCEEDED(MFSetAttributeRatio(input_media, MF_MT_FRAME_RATE,
++                                     frame_rate.value(), 1));
+   }
+ 
+   if (img_width.has_value() && img_height.has_value()) {
+-    ON_SUCCEEDED(MFSetAttributeSize(input_media, MF_MT_FRAME_SIZE, img_width.value(), img_height.value()));
++    ON_SUCCEEDED(MFSetAttributeSize(input_media, MF_MT_FRAME_SIZE,
++                                    img_width.value(), img_height.value()));
+   }
+ 
+   return hr;
+ }
+ 
+-int32_t H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings, int32_t number_of_cores) {
+-  if (codec_settings && codec_settings->codecType != kVideoCodecH264) {
+-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+-  }
+-
+-  // Release necessary in case of re-initializing.
+-  int32_t ret = Release();
+-  if (ret != WEBRTC_VIDEO_CODEC_OK) {
+-    return ret;
+-  }
+-
++int H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings,
++                                  int number_of_cores) {
+   RTC_LOG(LS_INFO) << "H264DecoderMFImpl::InitDecode()\n";
+ 
+-  width_ = codec_settings->width > 0 ? absl::optional<UINT32>(codec_settings->width) : absl::nullopt;
+-  height_ = codec_settings->height > 0 ? absl::optional<UINT32>(codec_settings->height) : absl::nullopt;
++  width_ = codec_settings->width > 0
++               ? absl::optional<UINT32>(codec_settings->width)
++               : absl::nullopt;
++  height_ = codec_settings->height > 0
++                ? absl::optional<UINT32>(codec_settings->height)
++                : absl::nullopt;
+ 
+   HRESULT hr = S_OK;
+-  ON_SUCCEEDED(CoInitializeEx(0, COINIT_APARTMENTTHREADED));
+-  ON_SUCCEEDED(MFStartup(MF_VERSION, 0));
++  //ON_SUCCEEDED(CoInitializeEx(0, COINIT_APARTMENTTHREADED));
++  ON_SUCCEEDED(MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET));
+ 
+-  ON_SUCCEEDED(CoCreateInstance(CLSID_MSH264DecoderMFT, nullptr, CLSCTX_INPROC_SERVER, IID_IUnknown, (void**)&decoder_));
++  ON_SUCCEEDED(CoCreateInstance(CLSID_MSH264DecoderMFT, nullptr,
++                                CLSCTX_INPROC_SERVER, IID_IUnknown,
++                                (void**)&decoder_));
+ 
+   if (FAILED(hr)) {
+     RTC_LOG(LS_ERROR) << "Init failure: could not create Media Foundation H264 "
+@@ -152,13 +133,16 @@ int32_t H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings, int32_t
+   if (SUCCEEDED(hr)) {
+     ON_SUCCEEDED(decoder_attrs->SetUINT32(CODECAPI_AVLowLatencyMode, TRUE));
+     if (FAILED(hr)) {
+-      RTC_LOG(LS_WARNING) << "Init warning: failed to set low latency in H264 decoder.";
++      RTC_LOG(LS_WARNING)
++          << "Init warning: failed to set low latency in H264 decoder.";
+       hr = S_OK;
+     }
+ 
+-    ON_SUCCEEDED(decoder_attrs->SetUINT32(CODECAPI_AVDecVideoAcceleration_H264, TRUE));
++    ON_SUCCEEDED(
++        decoder_attrs->SetUINT32(CODECAPI_AVDecVideoAcceleration_H264, TRUE));
+     if (FAILED(hr)) {
+-      RTC_LOG(LS_WARNING) << "Init warning: failed to set HW accel in H264 decoder.";
++      RTC_LOG(LS_WARNING)
++          << "Init warning: failed to set HW accel in H264 decoder.";
+     }
+   }
+ 
+@@ -168,7 +152,9 @@ int32_t H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings, int32_t
+   ComPtr<IMFMediaType> input_media;
+   ON_SUCCEEDED(CreateInputMediaType(
+       input_media.GetAddressOf(), width_, height_,
+-      codec_settings->maxFramerate > 0 ? absl::optional<UINT32>(codec_settings->maxFramerate) : absl::nullopt));
++      codec_settings->maxFramerate > 0
++          ? absl::optional<UINT32>(codec_settings->maxFramerate)
++          : absl::nullopt));
+ 
+   if (FAILED(hr)) {
+     RTC_LOG(LS_ERROR) << "Init failure: could not create input media type.";
+@@ -179,13 +165,15 @@ int32_t H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings, int32_t
+   ON_SUCCEEDED(decoder_->SetInputType(0, input_media.Get(), 0));
+ 
+   if (FAILED(hr)) {
+-    RTC_LOG(LS_ERROR) << "Init failure: failed to set input media type on decoder.";
++    RTC_LOG(LS_ERROR)
++        << "Init failure: failed to set input media type on decoder.";
+     return WEBRTC_VIDEO_CODEC_ERROR;
+   }
+ 
+   // Assert MF supports NV12 output
+   bool suitable_type_found;
+-  ON_SUCCEEDED(ConfigureOutputMediaType(decoder_, MFVideoFormat_NV12, &suitable_type_found));
++  ON_SUCCEEDED(ConfigureOutputMediaType(decoder_, MFVideoFormat_NV12,
++                                        &suitable_type_found));
+ 
+   if (FAILED(hr) || !suitable_type_found) {
+     RTC_LOG(LS_ERROR) << "Init failure: failed to find a valid output media "
+@@ -204,8 +192,10 @@ int32_t H264DecoderMFImpl::InitDecode(const VideoCodec* codec_settings, int32_t
+   }
+ 
+   ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_COMMAND_FLUSH, NULL));
+-  ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, NULL));
+-  ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, NULL));
++  ON_SUCCEEDED(
++      decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, NULL));
++  ON_SUCCEEDED(
++      decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, NULL));
+ 
+   inited_ = true;
+   return SUCCEEDED(hr) ? WEBRTC_VIDEO_CODEC_OK : WEBRTC_VIDEO_CODEC_ERROR;
+@@ -227,11 +217,13 @@ HRESULT GetOutputStatus(ComPtr<IMFTransform> decoder, DWORD* output_status) {
+  * Note: expected to return MF_E_TRANSFORM_NEED_MORE_INPUT and
+  *       MF_E_TRANSFORM_STREAM_CHANGE which must be handled by caller.
+  */
+-HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time_ms) {
++HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp,
++                                       uint64_t ntp_time_ms) {
+   HRESULT hr;
+   DWORD output_status;
+ 
+-  while (SUCCEEDED(hr = GetOutputStatus(decoder_, &output_status)) && output_status == MFT_OUTPUT_STATUS_SAMPLE_READY) {
++  while (SUCCEEDED(hr = GetOutputStatus(decoder_, &output_status)) &&
++         output_status == MFT_OUTPUT_STATUS_SAMPLE_READY) {
+     // Get needed size of our output buffer
+     MFT_OUTPUT_STREAM_INFO strm_info;
+     ON_SUCCEEDED(decoder_->GetOutputStreamInfo(0, &strm_info));
+@@ -244,7 +236,8 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+     ComPtr<IMFMediaBuffer> out_buffer;
+     ON_SUCCEEDED(MFCreateMemoryBuffer(strm_info.cbSize, &out_buffer));
+     if (FAILED(hr)) {
+-      RTC_LOG(LS_ERROR) << "Decode failure: output image memory buffer creation failed.";
++      RTC_LOG(LS_ERROR)
++          << "Decode failure: output image memory buffer creation failed.";
+       return hr;
+     }
+ 
+@@ -257,7 +250,8 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+ 
+     ON_SUCCEEDED(out_sample->AddBuffer(out_buffer.Get()));
+     if (FAILED(hr)) {
+-      RTC_LOG(LS_ERROR) << "Decode failure: failed to add buffer to output in_sample.";
++      RTC_LOG(LS_ERROR)
++          << "Decode failure: failed to add buffer to output in_sample.";
+       return hr;
+     }
+ 
+@@ -293,9 +287,11 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+     } else {
+       // Query the size from MF output media type
+       ComPtr<IMFMediaType> output_type;
+-      ON_SUCCEEDED(decoder_->GetOutputCurrentType(0, output_type.GetAddressOf()));
++      ON_SUCCEEDED(
++          decoder_->GetOutputCurrentType(0, output_type.GetAddressOf()));
+ 
+-      ON_SUCCEEDED(MFGetAttributeSize(output_type.Get(), MF_MT_FRAME_SIZE, &width, &height));
++      ON_SUCCEEDED(MFGetAttributeSize(output_type.Get(), MF_MT_FRAME_SIZE,
++                                      &width, &height));
+       if (FAILED(hr)) {
+         RTC_LOG(LS_ERROR) << "Decode failure: could not read image dimensions "
+                              "from Media Foundation, so the video frame buffer "
+@@ -308,7 +304,8 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+       height_.emplace(height);
+     }
+ 
+-    rtc::scoped_refptr<I420Buffer> buffer = buffer_pool_.CreateBuffer(width, height);
++    rtc::scoped_refptr<I420Buffer> buffer =
++        buffer_pool_.CreateBuffer(width, height);
+ 
+     if (!buffer.get()) {
+       // Pool has too many pending frames.
+@@ -335,8 +332,11 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+       // Convert NV12 to I420. Y and UV sections have same stride in NV12
+       // (width). The size of the Y section is the size of the frame, since Y
+       // luminance values are 8-bits each.
+-      libyuv::NV12ToI420(src_data, width, src_data + (width * height), width, buffer->MutableDataY(), buffer->StrideY(),
+-                         buffer->MutableDataU(), buffer->StrideU(), buffer->MutableDataV(), buffer->StrideV(), width, height);
++      libyuv::NV12ToI420(src_data, width, src_data + (width * height), width,
++                         buffer->MutableDataY(), buffer->StrideY(),
++                         buffer->MutableDataU(), buffer->StrideU(),
++                         buffer->MutableDataV(), buffer->StrideV(), width,
++                         height);
+ 
+       ON_SUCCEEDED(src_buffer->Unlock());
+       if (FAILED(hr))
+@@ -357,7 +357,8 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+ 
+     // Emit image to downstream
+     if (decode_complete_callback_ != nullptr) {
+-      decode_complete_callback_->Decoded(decoded_frame, absl::nullopt, absl::nullopt);
++      decode_complete_callback_->Decoded(decoded_frame, absl::nullopt,
++                                         absl::nullopt);
+     }
+   }
+ 
+@@ -368,15 +369,16 @@ HRESULT H264DecoderMFImpl::FlushFrames(uint32_t rtp_timestamp, uint64_t ntp_time
+  * Note: acceptable to return MF_E_NOTACCEPTING (though it shouldn't since
+  * last loop should've flushed)
+  */
+-HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool missing_frames) {
++HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image,
++                                        bool missing_frames) {
+   HRESULT hr = S_OK;
+ 
+   // Create a MF buffer from our data
+   ComPtr<IMFMediaBuffer> in_buffer;
+-  // ON_SUCCEEDED(MFCreateMemoryBuffer(input_image._length, &in_buffer));
+   ON_SUCCEEDED(MFCreateMemoryBuffer(input_image.size(), &in_buffer));
+   if (FAILED(hr)) {
+-    RTC_LOG(LS_ERROR) << "Decode failure: input image memory buffer creation failed.";
++    RTC_LOG(LS_ERROR)
++        << "Decode failure: input image memory buffer creation failed.";
+     return hr;
+   }
+ 
+@@ -386,14 +388,12 @@ HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool mi
+   if (FAILED(hr))
+     return hr;
+ 
+-  // memcpy(data, input_image._buffer, input_image._length);
+-  memcpy(data, input_image.buffer(), input_image.size());
++  memcpy(data, input_image.data(), input_image.size());
+ 
+   ON_SUCCEEDED(in_buffer->Unlock());
+   if (FAILED(hr))
+     return hr;
+ 
+-  // ON_SUCCEEDED(in_buffer->SetCurrentLength(input_image._length));
+   ON_SUCCEEDED(in_buffer->SetCurrentLength(input_image.size()));
+   if (FAILED(hr))
+     return hr;
+@@ -408,7 +408,8 @@ HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool mi
+ 
+   ON_SUCCEEDED(in_sample->AddBuffer(in_buffer.Get()));
+   if (FAILED(hr)) {
+-    RTC_LOG(LS_ERROR) << "Decode failure: failed to add buffer to input in_sample.";
++    RTC_LOG(LS_ERROR)
++        << "Decode failure: failed to add buffer to input in_sample.";
+     return hr;
+   }
+ 
+@@ -418,12 +419,18 @@ HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool mi
+     sample_time_ms = 0;
+   } else {
+     // Convert from 90 khz, rounding to nearest ms.
+-    sample_time_ms = (static_cast<uint64_t>(input_image.Timestamp()) - first_frame_rtp_) / 90.0 + 0.5f;
++    sample_time_ms =
++        (static_cast<uint64_t>(input_image.Timestamp()) - first_frame_rtp_) /
++            90.0 +
++        0.5f;
+   }
+ 
+-  ON_SUCCEEDED(in_sample->SetSampleTime(sample_time_ms * 10000 /* convert milliseconds to 100-nanosecond unit */));
++  ON_SUCCEEDED(in_sample->SetSampleTime(
++      sample_time_ms *
++      10000 /* convert milliseconds to 100-nanosecond unit */));
+   if (FAILED(hr)) {
+-    RTC_LOG(LS_ERROR) << "Decode failure: failed to set in_sample time on input in_sample.";
++    RTC_LOG(LS_ERROR)
++        << "Decode failure: failed to set in_sample time on input in_sample.";
+     return hr;
+   }
+ 
+@@ -432,17 +439,19 @@ HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool mi
+   ON_SUCCEEDED(in_sample.As(&sample_attrs));
+ 
+   if (FAILED(hr)) {
+-    RTC_LOG(LS_ERROR) << "Decode warning: failed to set image attributes for frame.";
++    RTC_LOG(LS_ERROR)
++        << "Decode warning: failed to set image attributes for frame.";
+     hr = S_OK;
+   } else {
+-    // if (input_image._frameType == kVideoFrameKey &&
+-    if (input_image._frameType == VideoFrameType::kVideoFrameKey && input_image._completeFrame) {
++    if (input_image._frameType == VideoFrameType::kVideoFrameKey &&
++        input_image._completeFrame) {
+       ON_SUCCEEDED(sample_attrs->SetUINT32(MFSampleExtension_CleanPoint, TRUE));
+       hr = S_OK;
+     }
+ 
+     if (missing_frames) {
+-      ON_SUCCEEDED(sample_attrs->SetUINT32(MFSampleExtension_Discontinuity, TRUE));
++      ON_SUCCEEDED(
++          sample_attrs->SetUINT32(MFSampleExtension_Discontinuity, TRUE));
+       hr = S_OK;
+     }
+   }
+@@ -452,52 +461,9 @@ HRESULT H264DecoderMFImpl::EnqueueFrame(const EncodedImage& input_image, bool mi
+   return hr;
+ }
+ 
+-int32_t H264DecoderMFImpl::Release() {
+-  OutputDebugString(L"WinUWPH264DecoderImpl::Release()\n");
+-  HRESULT hr = S_OK;
+-  inited_ = false;
+-
+-  // Release I420 frame buffer pool
+-  buffer_pool_.Release();
+-
+-  if (decoder_ != NULL) {
+-    // Follow shutdown procedure gracefully. On fail, continue anyway.
+-    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_END_OF_STREAM, 0));
+-    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_COMMAND_DRAIN, NULL));
+-    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_COMMAND_FLUSH, NULL));
+-    decoder_ = nullptr;
+-  }
+-
+-  MFShutdown();
+-  CoUninitialize();
+-
+-  return WEBRTC_VIDEO_CODEC_OK;
+-}
+-
+-int32_t H264DecoderMFImpl::RegisterDecodeCompleteCallback(DecodedImageCallback* callback) {
+-  rtc::CritScope lock(&crit_);
+-
+-  decode_complete_callback_ = callback;
+-  return WEBRTC_VIDEO_CODEC_OK;
+-}
+-
+-int32_t H264DecoderMFImpl::Decode(const EncodedImage& input_image,
+-                                  // bool /*missing_frames*/,
+-                                  bool missing_frames,
+-                                  int64_t /*render_time_ms*/) {
+-  if (!decode_complete_callback_) {
+-    RTC_LOG(LS_WARNING) << "InitDecode() has been called, but a callback function "
+-                           "has not been set with RegisterDecodeCompleteCallback()";
+-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+-  }
+-  if (!input_image.data() || !input_image.size()) {
+-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+-  }
+-
+-  if (input_image.size() > static_cast<size_t>(std::numeric_limits<int>::max())) {
+-    return WEBRTC_VIDEO_CODEC_ERROR;
+-  }
+-
++int H264DecoderMFImpl::Decode(const EncodedImage& input_image,
++                              bool missing_frames,
++                              int64_t render_time_ms) {
+   HRESULT hr = S_OK;
+ 
+   if (!inited_) {
+@@ -508,13 +474,14 @@ int32_t H264DecoderMFImpl::Decode(const EncodedImage& input_image,
+     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+   }
+ 
+-  if (input_image.buffer() == NULL && input_image.size() > 0) {
++  if (input_image.data() == NULL && input_image.size() > 0) {
+     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+   }
+ 
+   // Discard until keyframe.
+   if (require_keyframe_) {
+-    if (input_image._frameType != VideoFrameType::kVideoFrameKey || !input_image._completeFrame) {
++    if (input_image._frameType != VideoFrameType::kVideoFrameKey ||
++        !input_image._completeFrame) {
+       return WEBRTC_VIDEO_CODEC_ERROR;
+     } else {
+       require_keyframe_ = false;
+@@ -545,7 +512,8 @@ int32_t H264DecoderMFImpl::Decode(const EncodedImage& input_image,
+   if (hr == MF_E_TRANSFORM_STREAM_CHANGE) {
+     // Output media type is no longer suitable. Reconfigure and retry.
+     bool suitable_type_found;
+-    hr = ConfigureOutputMediaType(decoder_, MFVideoFormat_NV12, &suitable_type_found);
++    hr = ConfigureOutputMediaType(decoder_, MFVideoFormat_NV12,
++                                  &suitable_type_found);
+ 
+     if (FAILED(hr) || !suitable_type_found)
+       return WEBRTC_VIDEO_CODEC_ERROR;
+@@ -566,10 +534,37 @@ int32_t H264DecoderMFImpl::Decode(const EncodedImage& input_image,
+   return WEBRTC_VIDEO_CODEC_ERROR;
+ }
+ 
++int H264DecoderMFImpl::RegisterDecodeCompleteCallback(
++    DecodedImageCallback* callback) {
++  rtc::CritScope lock(&crit_);
++  decode_complete_callback_ = callback;
++  return WEBRTC_VIDEO_CODEC_OK;
++}
++
++int H264DecoderMFImpl::Release() {
++  OutputDebugString(L"H264DecoderMFImpl::Release()\n");
++  HRESULT hr = S_OK;
++  inited_ = false;
++
++  // Release I420 frame buffer pool
++  buffer_pool_.Release();
++
++  if (decoder_ != NULL) {
++    // Follow shutdown procedure gracefully. On fail, continue anyway.
++    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_NOTIFY_END_OF_STREAM, 0));
++    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_COMMAND_DRAIN, NULL));
++    ON_SUCCEEDED(decoder_->ProcessMessage(MFT_MESSAGE_COMMAND_FLUSH, NULL));
++    decoder_ = nullptr;
++  }
++
++  ON_SUCCEEDED(MFShutdown());
++  //CoUninitialize();
++
++  return WEBRTC_VIDEO_CODEC_OK;
++}
++
+ const char* H264DecoderMFImpl::ImplementationName() const {
+   return "WinRTC_MF_H264";
+ }
+ 
+ }  // namespace webrtc
+-
+-//#endif  // WEBRTC_USE_H264
+diff --git a/modules/video_coding/codecs/h264/h264_decoder_mf_impl.h b/modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h
+similarity index 52%
+rename from modules/video_coding/codecs/h264/h264_decoder_mf_impl.h
+rename to modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h
+index c3bac1cc68..b2d35db1dc 100644
+--- a/modules/video_coding/codecs/h264/h264_decoder_mf_impl.h
++++ b/modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h
+@@ -6,67 +6,50 @@
+  *  tree. An additional intellectual property rights grant can be found
+  *  in the file PATENTS.  All contributing project authors may
+  *  be found in the AUTHORS file in the root of the source tree.
+- *
+  */
+ 
+-#ifndef MODULES_VIDEO_CODING_CODECS_H264_H264_DECODER_MF_IMPL_H_
+-#define MODULES_VIDEO_CODING_CODECS_H264_H264_DECODER_MF_IMPL_H_
+-
+-#include <memory>
++#ifndef MODULES_VIDEO_CODING_CODECS_H264_WIN_DECODER_H264_DECODER_MF_IMPL_H_
++#define MODULES_VIDEO_CODING_CODECS_H264_WIN_DECODER_H264_DECODER_MF_IMPL_H_
+ 
+-//
+-// WebRTC-UWP Begin
+-//
+ #include <mfapi.h>
+ #include <mfidl.h>
+-#include <Mfreadwrite.h>
++#include <mfreadwrite.h>
+ #include <mferror.h>
+ #include <wrl.h>
+ 
+-#include "rtc_base/critical_section.h"
+-
+-#pragma comment(lib, "mfreadwrite")
+-#pragma comment(lib, "mfplat")
+-#pragma comment(lib, "mfuuid")
+-//
+-// WebRTC-UWP End
+-//
+-
+-#include "modules/video_coding/codecs/h264/include/h264.h"
++#include "api/video_codecs/video_decoder.h"
+ #include "common_video/include/i420_buffer_pool.h"
++#include "modules/video_coding/codecs/h264/include/h264.h"
++#include "modules/video_coding/codecs/h264/win/utils/sample_attribute_queue.h"
++#include "rtc_base/critical_section.h"
+ 
+ namespace webrtc {
+ 
+-class H264DecoderMFImpl : public H264Decoder {
++class H264DecoderMFImpl : public VideoDecoder {
+  public:
+   H264DecoderMFImpl();
++
+   ~H264DecoderMFImpl() override;
+ 
+-  // If |codec_settings| is NULL it is ignored. If it is not NULL,
+-  // |codec_settings->codecType| must be |kVideoCodecH264|.
+-  int32_t InitDecode(const VideoCodec* codec_settings,
+-                     int32_t number_of_cores) override;
+-  int32_t Release() override;
++  int InitDecode(const VideoCodec* codec_settings,
++                 int number_of_cores) override;
+ 
+-  int32_t RegisterDecodeCompleteCallback(
+-      DecodedImageCallback* callback) override;
++  int Decode(const EncodedImage& input_image,
++             bool missing_frames,
++             int64_t /*render_time_ms*/) override;
+ 
+-  // |missing_frames|, |fragmentation| and |render_time_ms| are ignored.
+-  int32_t Decode(const EncodedImage& input_image,
+-                 bool /*missing_frames*/,
+-                 int64_t render_time_ms = -1) override;
++  int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;
++
++  int Release() override;
+ 
+   const char* ImplementationName() const override;
+ 
+  private:
+-   //
+-   // WebRTC-UWP Begin
+-   //
+   HRESULT FlushFrames(uint32_t timestamp, uint64_t ntp_time_ms);
+   HRESULT EnqueueFrame(const EncodedImage& input_image, bool missing_frames);
+ 
+  private:
+-  Microsoft::WRL::ComPtr<IMFTransform> decoder_;
++  ::Microsoft::WRL::ComPtr<IMFTransform> decoder_;
+   I420BufferPool buffer_pool_;
+ 
+   bool inited_ = false;
+@@ -76,10 +59,8 @@ class H264DecoderMFImpl : public H264Decoder {
+   absl::optional<uint32_t> height_;
+   rtc::CriticalSection crit_;
+   DecodedImageCallback* decode_complete_callback_;
+-};
++};  // end of H264DecoderMFImpl class
+ 
+ }  // namespace webrtc
+ 
+-//#endif  // WEBRTC_USE_H264
+-
+-#endif  // MODULES_VIDEO_CODING_CODECS_H264_H264_DECODER_MF_IMPL_H_
++#endif  // MODULES_VIDEO_CODING_CODECS_H264_WIN_DECODER_H264_DECODER_MF_IMPL_H_
+diff --git a/modules/video_coding/codecs/h264/win/h264_mf_factory.cc b/modules/video_coding/codecs/h264/win/h264_mf_factory.cc
+index b398c165b5..ee1eab8d21 100644
+--- a/modules/video_coding/codecs/h264/win/h264_mf_factory.cc
++++ b/modules/video_coding/codecs/h264/win/h264_mf_factory.cc
+@@ -15,10 +15,15 @@
+ #include "api/video_codecs/sdp_video_format.h"
+ #include "common_types.h"
+ #include "media/base/h264_profile_level_id.h"
++#include "modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h"
+ #include "modules/video_coding/codecs/h264/win/encoder/h264_encoder_mf_impl.h"
+ 
+ namespace webrtc {
+ 
++//
++// H264MFEncoderFactory
++//
++
+ SdpVideoFormat CreateH264Format(H264::Profile profile,
+                                 H264::Level level,
+                                 const std::string& packetization_mode) {
+@@ -32,9 +37,7 @@ SdpVideoFormat CreateH264Format(H264::Profile profile,
+        {cricket::kH264FmtpPacketizationMode, packetization_mode}});
+ }
+ 
+-H264MFEncoderFactory::H264MFEncoderFactory() {}
+-
+-std::vector<SdpVideoFormat> H264MFEncoderFactory::GetSupportedFormats() const {
++std::vector<SdpVideoFormat> SupportedFormats() {
+   return {
+       CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "1"),
+       CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "0"),
+@@ -43,6 +46,10 @@ std::vector<SdpVideoFormat> H264MFEncoderFactory::GetSupportedFormats() const {
+                        "0")};
+ }
+ 
++std::vector<SdpVideoFormat> H264MFEncoderFactory::GetSupportedFormats() const {
++  return SupportedFormats();
++}
++
+ VideoEncoderFactory::CodecInfo H264MFEncoderFactory::QueryVideoEncoder(
+     const SdpVideoFormat& format) const {
+   VideoEncoderFactory::CodecInfo codec_info;
+@@ -59,4 +66,16 @@ std::unique_ptr<VideoEncoder> H264MFEncoderFactory::CreateVideoEncoder(
+   return std::make_unique<H264EncoderMFImpl>(codec);
+ }
+ 
++//
++// H264MFDecoderFactory
++//
++std::vector<SdpVideoFormat> H264MFDecoderFactory::GetSupportedFormats() const {
++  return SupportedFormats();
++}
++
++std::unique_ptr<VideoDecoder> H264MFDecoderFactory::CreateVideoDecoder(
++    const SdpVideoFormat& /*format*/) {
++  return std::make_unique<H264DecoderMFImpl>();
++}
++
+ }  // namespace webrtc
+diff --git a/modules/video_coding/codecs/h264/win/h264_mf_factory.h b/modules/video_coding/codecs/h264/win/h264_mf_factory.h
+index 4d6f02d538..4a48ee9cf2 100644
+--- a/modules/video_coding/codecs/h264/win/h264_mf_factory.h
++++ b/modules/video_coding/codecs/h264/win/h264_mf_factory.h
+@@ -13,13 +13,15 @@
+ 
+ #include <string>
+ 
++#include "api/video_codecs/video_decoder_factory.h"
+ #include "api/video_codecs/video_encoder_factory.h"
+ 
+ namespace webrtc {
+ 
+ class H264MFEncoderFactory : public VideoEncoderFactory {
+  public:
+-  H264MFEncoderFactory();
++  H264MFEncoderFactory() = default;
++  ~H264MFEncoderFactory() override = default;
+ 
+   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+ 
+@@ -30,6 +32,17 @@ class H264MFEncoderFactory : public VideoEncoderFactory {
+       const SdpVideoFormat& format) override;
+ };
+ 
++class H264MFDecoderFactory : public VideoDecoderFactory {
++ public:
++  H264MFDecoderFactory() = default;
++  ~H264MFDecoderFactory() override = default;
++
++  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
++
++  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
++      const SdpVideoFormat& format) override;
++};
++
+ }  // namespace webrtc
+ 
+ #endif  // MODULES_VIDEO_CODING_CODECS_H264_WIN_H264_MF_FACTORY_H_
+-- 
+2.26.2.windows.1
+
