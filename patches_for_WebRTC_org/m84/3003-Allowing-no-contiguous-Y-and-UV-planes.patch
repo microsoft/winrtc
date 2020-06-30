@@ -1,0 +1,106 @@
+From 63c55bf69f2eed1537f4a7173380c3a55f3de7e0 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Mon, 29 Jun 2020 16:45:15 -0700
+Subject: [PATCH] Allowing no contiguous Y and UV planes
+
+---
+ modules/video_capture/video_capture_impl.cc   | 28 ++++++++-----------
+ modules/video_capture/video_capture_impl.h    |  5 +++-
+ .../video_capture/windows/sink_filter_ds.cc   |  5 +++-
+ 3 files changed, 20 insertions(+), 18 deletions(-)
+
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index 9d53a91157..398e41c07b 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -114,7 +114,10 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
+   return 0;
+ }
+ 
+-int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
++int32_t VideoCaptureImpl::IncomingFrame(uint8_t* plane_y,
++                                        int32_t stride_y,
++                                        uint8_t* plane_uv,
++                                        int32_t stride_uv,
+                                         size_t videoFrameLength,
+                                         const VideoCaptureCapability& frameInfo,
+                                         int64_t captureTime /*=0*/) {
+@@ -125,16 +128,8 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+ 
+   TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
+ 
+-  // Not encoded, convert to I420.
+-  if (frameInfo.videoType != VideoType::kMJPEG &&
+-      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
+-          videoFrameLength) {
+-    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
+-    return -1;
+-  }
+-
+-  int stride_y = width;
+-  int stride_uv = (width + 1) / 2;
++  int dst_stride_y = width;
++  int dst_stride_uv = (width + 1) / 2;
+   int target_width = width;
+   int target_height = abs(height);
+ 
+@@ -156,7 +151,7 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+ 
+   // TODO(nisse): Use a pool?
+   rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
+-      target_width, target_height, stride_y, stride_uv, stride_uv);
++      target_width, target_height, dst_stride_y, dst_stride_uv, dst_stride_uv);
+ 
+   libyuv::RotationMode rotation_mode = libyuv::kRotate0;
+   if (apply_rotation) {
+@@ -177,10 +172,11 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+   }
+ 
+   const int conversionResult = libyuv::ConvertToI420(
+-      videoFrame, videoFrameLength, buffer.get()->MutableDataY(),
+-      buffer.get()->StrideY(), buffer.get()->MutableDataU(),
+-      buffer.get()->StrideU(), buffer.get()->MutableDataV(),
+-      buffer.get()->StrideV(), 0, 0,  // No Cropping
++      plane_y, videoFrameLength, stride_y, plane_uv, stride_uv,
++      buffer.get()->MutableDataY(), buffer.get()->StrideY(),
++      buffer.get()->MutableDataU(), buffer.get()->StrideU(),
++      buffer.get()->MutableDataV(), buffer.get()->StrideV(), 0,
++      0,  // No Cropping
+       width, height, target_width, target_height, rotation_mode,
+       ConvertVideoType(frameInfo.videoType));
+   if (conversionResult < 0) {
+diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
+index 197bfd387c..ed687106b9 100644
+--- a/modules/video_capture/video_capture_impl.h
++++ b/modules/video_capture/video_capture_impl.h
+@@ -62,7 +62,10 @@ class VideoCaptureImpl : public VideoCaptureModule {
+   const char* CurrentDeviceName() const override;
+ 
+   // |capture_time| must be specified in NTP time format in milliseconds.
+-  int32_t IncomingFrame(uint8_t* videoFrame,
++  int32_t IncomingFrame(uint8_t* plane_y,
++                        int32_t stride_y,
++                        uint8_t* plane_uv,
++                        int32_t stride_uv,
+                         size_t videoFrameLength,
+                         const VideoCaptureCapability& frameInfo,
+                         int64_t captureTime = 0);
+diff --git a/modules/video_capture/windows/sink_filter_ds.cc b/modules/video_capture/windows/sink_filter_ds.cc
+index 9019b127cf..0c73603fe4 100644
+--- a/modules/video_capture/windows/sink_filter_ds.cc
++++ b/modules/video_capture/windows/sink_filter_ds.cc
+@@ -902,7 +902,10 @@ void CaptureSinkFilter::ProcessCapturedFrame(
+     size_t length,
+     const VideoCaptureCapability& frame_info) {
+   // Called on the capture thread.
+-  capture_observer_->IncomingFrame(buffer, length, frame_info);
++  capture_observer_->IncomingFrame(
++      buffer, frame_info.width,
++      buffer + (static_cast<size_t>(frame_info.width) * frame_info.height),
++      frame_info.width, length, frame_info);
+ }
+ 
+ void CaptureSinkFilter::NotifyEvent(long code,
+-- 
+2.24.1.windows.2
+

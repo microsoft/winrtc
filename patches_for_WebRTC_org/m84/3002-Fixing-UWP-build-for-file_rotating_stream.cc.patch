@@ -1,0 +1,28 @@
+From 424baf4a26e6e67323d90d62e0fa5dad27890a6a Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Mon, 23 Dec 2019 11:35:14 -0800
+Subject: [PATCH] Fixing UWP build for file_rotating_stream.cc.
+
+The ::MoveFile API is not supported by UWP. ::MoveFileEx should be used instead.
+For similar results as ::MoveFile, MOVEFILE_WRITE_THROUGH should be passed as parameter for ::MoveFileEx preventing the function return until the file is actually moved on the disk.
+---
+ rtc_base/file_rotating_stream.cc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/rtc_base/file_rotating_stream.cc b/rtc_base/file_rotating_stream.cc
+index 826e6745f3..8641b781fa 100644
+--- a/rtc_base/file_rotating_stream.cc
++++ b/rtc_base/file_rotating_stream.cc
+@@ -83,7 +83,8 @@ bool DeleteFile(const std::string& file) {
+ }
+ 
+ bool MoveFile(const std::string& old_file, const std::string& new_file) {
+-  return ::MoveFileW(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str()) != 0;
++  return ::MoveFileExW(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str(),
++                     MOVEFILE_WRITE_THROUGH) != 0;
+ }
+ 
+ bool IsFile(const std::string& file) {
+-- 
+2.24.1.windows.2
+

@@ -1,0 +1,26 @@
+From f16a224dd6044f09036cffafda530f343095543b Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Mon, 23 Dec 2019 12:34:05 -0800
+Subject: [PATCH] Fixing UWP build for libvpx. This change fixes libvpx build
+ by making the build system consider UWP as a Windows build.
+
+---
+ libvpx/BUILD.gn | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libvpx/BUILD.gn b/libvpx/BUILD.gn
+index 599b9d1fe4d..8bee0325449 100644
+--- a/libvpx/BUILD.gn
++++ b/libvpx/BUILD.gn
+@@ -48,6 +48,8 @@ if (is_nacl) {
+   } else if (is_posix || is_fuchsia) {
+     # Should cover linux, fuchsia, mac, and the ios simulator.
+     os_category = "linux"
++  } else if (current_os == "winuwp") {
++    os_category = "win"
+   } else {  # This should only match windows.
+     os_category = current_os
+   }
+-- 
+2.24.1.windows.2
+
