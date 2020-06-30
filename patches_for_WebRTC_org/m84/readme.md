@@ -12,7 +12,7 @@ We're also investigating the feasibility of having NuGet packages of a patched W
 
 To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 19041 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **15GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
 
-You'll also need **Microsoft Visual Studio 2019**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
+You'll also need **Microsoft Visual Studio 2019 16.6.2**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 
 If you want to build for ARM/ARM64, also select the C++ MFC and ATL for latest v142 build tools and **C++ Universal Windows Platform support for v142 build tools** for the corresponding architecture.
 
