@@ -1,0 +1,34 @@
+From 0e4fa47842233562cfc7e36bb9b76af6c8ac4e63 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Mon, 29 Jun 2020 15:14:00 -0700
+Subject: [PATCH] Adding flags for using WinRT/C++ projections and build with
+ clang
+
+---
+ config/win/BUILD.gn | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index 7b44f0e43..96a0c3f27 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -232,7 +232,15 @@ config("runtime_library") {
+     } else {
+       defines += [ "WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP" ]
+     }
+-    cflags_cc += [ "/EHsc" ]
++    cflags_cc += [
++      "/std:c++17",  # Required for having a wrapper using the WinRT/C++ projection.
++      "/EHsc",  # Required for having a wrapper using the WinRT/C++ projection.
++    ]
++    if (is_clang) {
++      cflags += [
++        "-Wno-microsoft-template",  # The audio module uses some templates Microsoft style.
++      ]
++    }
+ 
+     # This warning is given because the linker cannot tell the difference
+     # between consuming WinRT APIs versus authoring WinRT within static
+-- 
+2.26.2.windows.1
+
