@@ -112,7 +112,7 @@ git checkout branch-heads/4147
 Instruct the tools to bring the bits from all the sub repositories to your dev box. This will take awhile.
 
 ```shell
-gclient sync
+gclient sync -D -r branch-heads/4147
 ```
 
 ## Applying the patches
