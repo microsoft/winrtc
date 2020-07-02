@@ -1,0 +1,30 @@
+From 11c64192b4ac2dcc7b39dde93d12904a84e3beb5 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Thu, 2 Jul 2020 14:17:00 -0700
+Subject: [PATCH] Removing unused files containing Win32 APIs from rtc_base
+
+---
+ rtc_base/BUILD.gn | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
+index a61ede4ac9..dbec46c41d 100644
+--- a/rtc_base/BUILD.gn
++++ b/rtc_base/BUILD.gn
+@@ -959,6 +959,13 @@ rtc_library("rtc_base") {
+       "win32_window.h",
+     ]
+ 
++    if (current_os == "winuwp") {
++      sources -= [
++        "win32_window.cc",
++        "win32_window.h",
++      ]
++    }
++
+     libs += [
+       "crypt32.lib",
+       "iphlpapi.lib",
+-- 
+2.24.1.windows.2
+
