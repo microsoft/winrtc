@@ -20,7 +20,7 @@ if errorlevel 1 goto :error
 popd
 
 pushd %WEBRTCM84_ROOT%
-git.exe am "%PATCH_DIR%3001-Removing-code-that-only-runs-on-Win32-from-the-build.patch"
+git.exe am "%PATCH_DIR%3001-Removing-unused-files-containing-Win32-APIs-from-rtc.patch"
 if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%3002-Fixing-UWP-build-for-file_rotating_stream.cc.patch"
 if errorlevel 1 goto :error
