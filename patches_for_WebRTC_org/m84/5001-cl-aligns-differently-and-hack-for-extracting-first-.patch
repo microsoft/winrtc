@@ -1,0 +1,180 @@
+From fea7c7cf77b585cc80cfe912c6b3a0b617bfe9f7 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Wed, 25 Mar 2020 23:29:10 -0700
+Subject: [PATCH] cl aligns differently and hack for extracting first component
+ of a SIMD vector
+
+Using non-SIMD code for functions written in GNI Assembler.
+
+bla
+---
+ BUILD.gn                        |  2 +-
+ simd/arm/common/jidctfst-neon.c |  6 ++++--
+ simd/arm/common/jidctint-neon.c | 33 +++++++++++++++++++--------------
+ simd/arm/common/jidctred-neon.c | 25 ++++++++++++++++---------
+ 4 files changed, 40 insertions(+), 26 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 20e95f3..5b5d525 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -167,13 +167,13 @@ static_library("simd") {
+   } else if (current_cpu == "arm64") {
+     sources = [
+       "simd/arm/arm64/jsimd.c",
+-      "simd/arm/arm64/jsimd_neon.S",
+       "simd/arm/common/jdcolor-neon.c",
+       "simd/arm/common/jdmerge-neon.c",
+       "simd/arm/common/jdsample-neon.c",
+       "simd/arm/common/jidctfst-neon.c",
+       "simd/arm/common/jidctint-neon.c",
+       "simd/arm/common/jidctred-neon.c",
++      "jsimd_none.c",
+     ]
+     configs -= [ "//build/config/compiler:default_optimization" ]
+     configs += [ "//build/config/compiler:optimize_speed" ]
+diff --git a/simd/arm/common/jidctfst-neon.c b/simd/arm/common/jidctfst-neon.c
+index c926e6d..60e9eb8 100644
+--- a/simd/arm/common/jidctfst-neon.c
++++ b/simd/arm/common/jidctfst-neon.c
+@@ -84,8 +84,10 @@ void jsimd_idct_ifast_neon(void *dct_table,
+   bitmap = vorrq_s16(bitmap, row6);
+   bitmap = vorrq_s16(bitmap, row7);
+ 
+-  int64_t left_ac_bitmap = vreinterpret_s64_s16(vget_low_s16(bitmap));
+-  int64_t right_ac_bitmap = vreinterpret_s64_s16(vget_high_s16(bitmap));
++  int64x1_t left_ac_bitmap_tmp = vreinterpret_s64_s16(vget_low_s16(bitmap));
++  int64x1_t right_ac_bitmap_tmp = vreinterpret_s64_s16(vget_high_s16(bitmap));
++  int64_t left_ac_bitmap = *((int64_t*)(&left_ac_bitmap_tmp));
++  int64_t right_ac_bitmap = *((int64_t*)(&right_ac_bitmap_tmp));
+ 
+   if (left_ac_bitmap == 0 && right_ac_bitmap == 0) {
+     /* All AC coefficients are zero. */
+diff --git a/simd/arm/common/jidctint-neon.c b/simd/arm/common/jidctint-neon.c
+index 11076a0..73a1f01 100644
+--- a/simd/arm/common/jidctint-neon.c
++++ b/simd/arm/common/jidctint-neon.c
+@@ -75,15 +75,20 @@
+ #define F_2_053_MINUS_2_562  (F_2_053 - F_2_562)
+ #define F_0_541_PLUS_0_765   (F_0_541 + F_0_765)
+ 
+-__attribute__ ((aligned(8))) static int16_t jsimd_idct_islow_neon_consts[] = {
+-                              F_0_899,             F_0_541,
+-                              F_2_562,             F_0_298_MINUS_0_899,
+-                              F_1_501_MINUS_0_899, F_2_053_MINUS_2_562,
+-                              F_0_541_PLUS_0_765,  F_1_175,
+-                              F_1_175_MINUS_0_390, F_0_541_MINUS_1_847,
+-                              F_3_072_MINUS_2_562, F_1_175_MINUS_1_961,
+-                              0, 0, 0, 0
+-                            };
++#if defined(_MSC_VER)
++__declspec(align(8))
++#else
++__attribute__ ((aligned(8)))
++#endif
++static int16_t jsimd_idct_islow_neon_consts[] = {
++    F_0_899,             F_0_541,
++    F_2_562,             F_0_298_MINUS_0_899,
++    F_1_501_MINUS_0_899, F_2_053_MINUS_2_562,
++    F_0_541_PLUS_0_765,  F_1_175,
++    F_1_175_MINUS_0_390, F_0_541_MINUS_1_847,
++    F_3_072_MINUS_2_562, F_1_175_MINUS_1_961,
++    0, 0, 0, 0
++};
+ 
+ /* Forward declaration of regular and sparse IDCT helper functions. */
+ 
+@@ -214,13 +219,13 @@ void jsimd_idct_islow_neon(void *dct_table,
+   int16x4_t bitmap = vorr_s16(row7, row6);
+   bitmap = vorr_s16(bitmap, row5);
+   bitmap = vorr_s16(bitmap, row4);
+-  int64_t bitmap_rows_4567 = vreinterpret_s64_s16(bitmap);
++  int64_t bitmap_rows_4567 = *((int64_t*)(&(vreinterpret_s64_s16(bitmap))));
+ 
+   if (bitmap_rows_4567 == 0) {
+     bitmap = vorr_s16(bitmap, row3);
+     bitmap = vorr_s16(bitmap, row2);
+     bitmap = vorr_s16(bitmap, row1);
+-    int64_t left_ac_bitmap = vreinterpret_s64_s16(bitmap);
++    int64_t left_ac_bitmap =  *((int64_t*)(&(vreinterpret_s64_s16(bitmap))));
+ 
+     if (left_ac_bitmap == 0) {
+       int16x4_t dcval = vshl_n_s16(vmul_s16(row0, quant_row0), PASS1_BITS);
+@@ -266,18 +271,18 @@ void jsimd_idct_islow_neon(void *dct_table,
+   bitmap = vorr_s16(row7, row6);
+   bitmap = vorr_s16(bitmap, row5);
+   bitmap = vorr_s16(bitmap, row4);
+-  bitmap_rows_4567 = vreinterpret_s64_s16(bitmap);
++  bitmap_rows_4567 = *((int64_t*)(&(vreinterpret_s64_s16(bitmap))));
+   bitmap = vorr_s16(bitmap, row3);
+   bitmap = vorr_s16(bitmap, row2);
+   bitmap = vorr_s16(bitmap, row1);
+-  int64_t right_ac_bitmap = vreinterpret_s64_s16(bitmap);
++  int64_t right_ac_bitmap = *((int64_t*)(&(vreinterpret_s64_s16(bitmap))));
+ 
+   /* Initialise to non-zero value: defaults to regular second pass. */
+   int64_t right_ac_dc_bitmap = 1;
+ 
+   if (right_ac_bitmap == 0) {
+     bitmap = vorr_s16(bitmap, row0);
+-    right_ac_dc_bitmap = vreinterpret_s64_s16(bitmap);
++    right_ac_dc_bitmap = *((int64_t*)(&(vreinterpret_s64_s16(bitmap))));
+ 
+     if (right_ac_dc_bitmap != 0) {
+       int16x4_t dcval = vshl_n_s16(vmul_s16(row0, quant_row0), PASS1_BITS);
+diff --git a/simd/arm/common/jidctred-neon.c b/simd/arm/common/jidctred-neon.c
+index 7e95bf3..8819d09 100644
+--- a/simd/arm/common/jidctred-neon.c
++++ b/simd/arm/common/jidctred-neon.c
+@@ -72,7 +72,7 @@
+ 
+ void jsimd_idct_2x2_neon(void *dct_table,
+                          JCOEFPTR coef_block,
+-                         JSAMPARRAY restrict output_buf,
++                         JSAMPARRAY /* restrict */ output_buf,
+                          JDIMENSION output_col)
+ {
+   ISLOW_MULT_TYPE *quantptr = dct_table;
+@@ -183,15 +183,20 @@ void jsimd_idct_2x2_neon(void *dct_table,
+  *       exact compatibility with jpeg-6b.
+  */
+ 
+-__attribute__ ((aligned(8))) static int16_t jsimd_idct_4x4_neon_consts[] = {
+-                                        F_1_847, -F_0_765, -F_0_211,  F_1_451,
+-                                       -F_2_172,  F_1_061, -F_0_509, -F_0_601,
+-                                        F_0_899,  F_2_562,        0,        0
+-                                      };
++#if defined(_MSC_VER)
++__declspec(align(8))
++#else
++__attribute__ ((aligned(8)))
++#endif
++static int16_t jsimd_idct_4x4_neon_consts[] = {
++    F_1_847, -F_0_765, -F_0_211,  F_1_451,
++    -F_2_172,  F_1_061, -F_0_509, -F_0_601,
++    F_0_899,  F_2_562,        0,        0
++};
+ 
+ void jsimd_idct_4x4_neon(void *dct_table,
+                          JCOEFPTR coef_block,
+-                         JSAMPARRAY restrict output_buf,
++                         JSAMPARRAY /* restrict */ output_buf,
+                          JDIMENSION output_col)
+ {
+   ISLOW_MULT_TYPE *quantptr = dct_table;
+@@ -217,8 +222,10 @@ void jsimd_idct_4x4_neon(void *dct_table,
+   bitmap = vorrq_s16(bitmap, row6);
+   bitmap = vorrq_s16(bitmap, row7);
+ 
+-  int64_t left_ac_bitmap = vreinterpret_s64_s16(vget_low_s16(bitmap));
+-  int64_t right_ac_bitmap = vreinterpret_s64_s16(vget_high_s16(bitmap));
++  int16x4_t low_s16 = vget_low_s16(bitmap);
++  int64_t left_ac_bitmap = *((int64_t*)(&(vreinterpret_s64_s16(low_s16))));
++  int16x4_t high_s16 = vget_high_s16(bitmap);
++  int64_t right_ac_bitmap = *((int64_t*)(&(vreinterpret_s64_s16(high_s16))));
+ 
+   /* Load constants for IDCT computation. */
+   const int16x4x3_t consts = vld1_s16_x3(jsimd_idct_4x4_neon_consts);
+-- 
+2.24.1.windows.2
+
