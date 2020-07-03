@@ -19,6 +19,14 @@ git.exe am "%PATCH_DIR%2001-Fixing-NV12-to-I420-conversion-with-strides-and-gap.
 if errorlevel 1 goto :error
 popd
 
+pushd %WEBRTCM84_ROOT%\third_party\boringssl\src
+git.exe am "%PATCH_DIR%4001-Arm64-is-a-thing-and-has-intrinsic-to-mul-two-64bit-.patch"
+if errorlevel 1 goto :error
+
+pushd %WEBRTCM84_ROOT%\third_party\libjpeg_turbo
+git.exe am "%PATCH_DIR%5001-Disabling-SIMD-for-ARM64.patch"
+if errorlevel 1 goto :error
+
 pushd %WEBRTCM84_ROOT%
 git.exe am "%PATCH_DIR%3001-Removing-unused-files-containing-Win32-APIs-from-rtc.patch"
 if errorlevel 1 goto :error
@@ -29,6 +37,8 @@ if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%3004-Changes-for-enabling-the-new-video-capture-module.patch"
 if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%3005-Adds-the-Media-Foundation-H264-encoder-and-decoder.patch"
+if errorlevel 1 goto :error
+git.exe am "%PATCH_DIR%3006-Disabling-switch-without-case-warning-for-aec3.patch"
 if errorlevel 1 goto :error
 xcopy /Y /E /Q "%PATCH_DIR%\src" .
 if errorlevel 1 goto :error
