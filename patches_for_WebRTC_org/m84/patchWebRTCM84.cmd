@@ -25,7 +25,7 @@ if errorlevel 1 goto :error
 popd
 
 pushd %WEBRTCM84_ROOT%\third_party\libjpeg_turbo
-git.exe am "%PATCH_DIR%5001-Disabling-SIMD-for-ARM64.patch"
+git.exe am "%PATCH_DIR%5001-cl-aligns-differently-and-hack-for-extracting-first-.patch"
 if errorlevel 1 goto :error
 popd
 
