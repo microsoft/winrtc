@@ -22,10 +22,12 @@ popd
 pushd %WEBRTCM84_ROOT%\third_party\boringssl\src
 git.exe am "%PATCH_DIR%4001-Arm64-is-a-thing-and-has-intrinsic-to-mul-two-64bit-.patch"
 if errorlevel 1 goto :error
+popd
 
 pushd %WEBRTCM84_ROOT%\third_party\libjpeg_turbo
 git.exe am "%PATCH_DIR%5001-Disabling-SIMD-for-ARM64.patch"
 if errorlevel 1 goto :error
+popd
 
 pushd %WEBRTCM84_ROOT%
 git.exe am "%PATCH_DIR%3001-Removing-unused-files-containing-Win32-APIs-from-rtc.patch"
