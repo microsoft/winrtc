@@ -1,0 +1,25 @@
+From 8bd5b67f681a0ca9060e399429595e17af8399a6 Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Thu, 2 Jul 2020 16:10:33 -0700
+Subject: [PATCH] Disabling SIMD for ARM64
+
+---
+ BUILD.gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 7e7f6ba..272cc38 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -161,7 +161,7 @@ static_library("simd") {
+     ]
+     configs -= [ "//build/config/compiler:default_optimization" ]
+     configs += [ "//build/config/compiler:optimize_speed" ]
+-  } else if (current_cpu == "arm64") {
++  } else if ((current_cpu == "arm64") && (current_os != "winuwp")) {
+     sources = [
+       "simd/arm/arm64/jsimd.c",
+       "simd/arm/arm64/jsimd_neon.S",
+-- 
+2.24.1.windows.2
+

@@ -1,0 +1,44 @@
+From 19985a00f53fb5368c74d01f1dae5a9d67c8a4ae Mon Sep 17 00:00:00 2001
+From: Augusto Righetto <aurighet@microsoft.com>
+Date: Wed, 25 Mar 2020 23:26:53 -0700
+Subject: [PATCH] Arm64 is a thing and has intrinsic to mul two 64bit uint
+
+---
+ crypto/fipsmodule/bn/internal.h | 6 +++++-
+ include/openssl/base.h          | 2 +-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/crypto/fipsmodule/bn/internal.h b/crypto/fipsmodule/bn/internal.h
+index d58a2acce..7b4fba775 100644
+--- a/crypto/fipsmodule/bn/internal.h
++++ b/crypto/fipsmodule/bn/internal.h
+@@ -404,8 +404,12 @@ uint64_t bn_mont_n0(const BIGNUM *n);
+ int bn_mod_exp_base_2_consttime(BIGNUM *r, unsigned p, const BIGNUM *n,
+                                 BN_CTX *ctx);
+ 
+-#if defined(OPENSSL_X86_64) && defined(_MSC_VER)
++#if defined(_MSC_VER)
++#if defined(OPENSSL_X86_64)
+ #define BN_UMULT_LOHI(low, high, a, b) ((low) = _umul128((a), (b), &(high)))
++#elif defined(OPENSSL_AARCH64)
++#define BN_UMULT_LOHI(low, high, a, b) ((low) = (a) * (b), high = __umulh((a), (b)))
++#endif
+ #endif
+ 
+ #if !defined(BN_ULLONG) && !defined(BN_UMULT_LOHI)
+diff --git a/include/openssl/base.h b/include/openssl/base.h
+index e347c09ae..0265c5103 100644
+--- a/include/openssl/base.h
++++ b/include/openssl/base.h
+@@ -90,7 +90,7 @@ extern "C" {
+ #elif defined(__x86) || defined(__i386) || defined(__i386__) || defined(_M_IX86)
+ #define OPENSSL_32_BIT
+ #define OPENSSL_X86
+-#elif defined(__aarch64__)
++#elif defined(__aarch64__) || defined(_M_ARM64)
+ #define OPENSSL_64_BIT
+ #define OPENSSL_AARCH64
+ #elif defined(__arm) || defined(__arm__) || defined(_M_ARM)
+-- 
+2.17.1.windows.2
+
