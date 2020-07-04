@@ -1,0 +1,29 @@
+From ef751f938649df5ce1dc3467ee8c83aa855d7f8e Mon Sep 17 00:00:00 2001
+From: Filippo Banno <fiban@microsoft.com>
+Date: Fri, 3 Jul 2020 18:43:42 +0100
+Subject: [PATCH] Do not push_back in foreach
+
+---
+ media/engine/multiplex_codec_factory.cc | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/media/engine/multiplex_codec_factory.cc b/media/engine/multiplex_codec_factory.cc
+index 5a220d528a..3fddeed945 100644
+--- a/media/engine/multiplex_codec_factory.cc
++++ b/media/engine/multiplex_codec_factory.cc
+@@ -90,7 +90,11 @@ MultiplexDecoderFactory::MultiplexDecoderFactory(
+ std::vector<SdpVideoFormat> MultiplexDecoderFactory::GetSupportedFormats()
+     const {
+   std::vector<SdpVideoFormat> formats = factory_->GetSupportedFormats();
+-  for (const auto& format : formats) {
++
++  // Iterate over the current elements and append at the end.
++  auto orig_formats_num = formats.size();
++  for (unsigned i = 0; i < orig_formats_num; ++i) {
++    const auto& format = formats[i];
+     if (absl::EqualsIgnoreCase(format.name, kMultiplexAssociatedCodecName)) {
+       SdpVideoFormat multiplex_format = format;
+       multiplex_format.parameters[cricket::kCodecParamAssociatedCodecName] =
+-- 
+2.24.1.windows.2
+
