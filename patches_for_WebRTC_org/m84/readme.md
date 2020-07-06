@@ -158,7 +158,7 @@ One you have the project set up, you can choose between building it inside Visua
 Assuming that your terminal has Visual Studio in the path, you can open the generated Visual Studio solution with the following command:
 
 ```shell
-devenv out\msvc\x64\Release\all.sln
+devenv out\msvc\uwp\Release\x64\all.sln
 ```
 
 Keep in mind that opening the all.sln solution from the Start Menu will render to different results. Calling Visual Studio from the current command prompt will seed Visual Studio with the environment variables defined earlier (DEPOT_TOOLS_WIN_TOOLCHAIN, GYP_MSVS_VERSION and PATH) and needed by VS2019 to build the solution from the IDE. 
