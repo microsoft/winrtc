@@ -12,29 +12,44 @@
 
 #include <vector>
 
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_types.h"
 #include "media/base/h264_profile_level_id.h"
 #include "modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h"
 #include "modules/video_coding/codecs/h264/win/encoder/h264_encoder_mf_impl.h"
+#include "third_party/abseil-cpp/absl/strings/match.cc"
+
+using std::make_unique;
+using std::unique_ptr;
+using std::vector;
 
 namespace webrtc {
 
 //
 // H264MFEncoderFactory
 //
+H264MFEncoderFactory::H264MFEncoderFactory()
+    : builtin_video_encoder_factory_(
+          webrtc::CreateBuiltinVideoEncoderFactory()) {}
 
-std::vector<SdpVideoFormat> SupportedFormats() {
-  return {
-      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "1"),
-      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "0"),
-      CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1, "1"),
-      CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1,
-                       "0")};
+void AddSupportedH264Codecs(vector<SdpVideoFormat>& formats) {
+  formats.emplace_back(
+      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "1"));
+  formats.emplace_back(
+      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "0"));
+  formats.emplace_back(CreateH264Format(H264::kProfileConstrainedBaseline,
+                                        H264::kLevel3_1, "1"));
+  formats.emplace_back(CreateH264Format(H264::kProfileConstrainedBaseline,
+                                        H264::kLevel3_1, "0"));
 }
 
-std::vector<SdpVideoFormat> H264MFEncoderFactory::GetSupportedFormats() const {
-  return SupportedFormats();
+vector<SdpVideoFormat> H264MFEncoderFactory::GetSupportedFormats() const {
+  auto formats = builtin_video_encoder_factory_->GetSupportedFormats();
+  AddSupportedH264Codecs(formats);
+
+  return formats;
 }
 
 VideoEncoderFactory::CodecInfo H264MFEncoderFactory::QueryVideoEncoder(
@@ -47,21 +62,36 @@ VideoEncoderFactory::CodecInfo H264MFEncoderFactory::QueryVideoEncoder(
   return codec_info;
 }
 
-std::unique_ptr<VideoEncoder> H264MFEncoderFactory::CreateVideoEncoder(
+unique_ptr<VideoEncoder> H264MFEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
-  return std::make_unique<H264EncoderMFImpl>();
+  if (absl::EqualsIgnoreCase(format.name.c_str(), cricket::kH264CodecName)) {
+    return make_unique<H264EncoderMFImpl>();
+  }
+
+  return builtin_video_encoder_factory_->CreateVideoEncoder(format);
 }
 
 //
 // H264MFDecoderFactory
 //
-std::vector<SdpVideoFormat> H264MFDecoderFactory::GetSupportedFormats() const {
-  return SupportedFormats();
+H264MFDecoderFactory::H264MFDecoderFactory()
+    : builtin_video_decoder_factory_(
+          webrtc::CreateBuiltinVideoDecoderFactory()) {}
+
+vector<SdpVideoFormat> H264MFDecoderFactory::GetSupportedFormats() const {
+  auto formats = builtin_video_decoder_factory_->GetSupportedFormats();
+  AddSupportedH264Codecs(formats);
+
+  return formats;
 }
 
-std::unique_ptr<VideoDecoder> H264MFDecoderFactory::CreateVideoDecoder(
-    const SdpVideoFormat& /*format*/) {
-  return std::make_unique<H264DecoderMFImpl>();
+unique_ptr<VideoDecoder> H264MFDecoderFactory::CreateVideoDecoder(
+    const SdpVideoFormat& format) {
+  if (absl::EqualsIgnoreCase(format.name.c_str(), cricket::kH264CodecName)) {
+    return make_unique<H264DecoderMFImpl>();
+  }
+
+  return builtin_video_decoder_factory_->CreateVideoDecoder(format);
 }
 
 }  // namespace webrtc

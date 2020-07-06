@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_H264_WIN_H264_MF_FACTORY_H_
 #define MODULES_VIDEO_CODING_CODECS_H264_WIN_H264_MF_FACTORY_H_
 
+#include <memory>
 #include <string>
 
 #include "api/video_codecs/video_decoder_factory.h"
@@ -20,7 +21,7 @@ namespace webrtc {
 
 class H264MFEncoderFactory : public VideoEncoderFactory {
  public:
-  H264MFEncoderFactory() = default;
+  H264MFEncoderFactory();
   ~H264MFEncoderFactory() override = default;
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
@@ -30,17 +31,24 @@ class H264MFEncoderFactory : public VideoEncoderFactory {
 
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
+
+ private:
+  const std::unique_ptr<VideoEncoderFactory> builtin_video_encoder_factory_;
 };
 
 class H264MFDecoderFactory : public VideoDecoderFactory {
  public:
-  H264MFDecoderFactory() = default;
+  H264MFDecoderFactory();
   ~H264MFDecoderFactory() override = default;
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
       const SdpVideoFormat& format) override;
+
+ private:
+  const std::unique_ptr<VideoDecoderFactory> builtin_video_decoder_factory_;
+  ;
 };
 
 }  // namespace webrtc
