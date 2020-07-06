@@ -19,7 +19,7 @@
 #include "media/base/h264_profile_level_id.h"
 #include "modules/video_coding/codecs/h264/win/decoder/h264_decoder_mf_impl.h"
 #include "modules/video_coding/codecs/h264/win/encoder/h264_encoder_mf_impl.h"
-#include "third_party/abseil-cpp/absl/strings/match.cc"
+#include "third_party/abseil-cpp/absl/strings/match.h"
 
 using std::make_unique;
 using std::unique_ptr;
