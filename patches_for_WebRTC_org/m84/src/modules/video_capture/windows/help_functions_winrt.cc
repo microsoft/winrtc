@@ -240,8 +240,14 @@ HRESULT GetMediaCaptureWithInitSettings(
         initialization_settings,
     _COM_Outptr_ ::ABI::Windows::Media::Capture::IMediaCapture**
         media_capture) {
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) && \
+    !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+  return GetMediaCaptureWithInitSettingsUWP(initialization_settings,
+                                            media_capture);
+#else
   return GetMediaCaptureWithInitSettingsWin32(initialization_settings,
                                               media_capture);
+#endif  // WINAPI_PARTITION_APP && !WINAPI_PARTITION_DESKTOP
 }
 
 uint32_t SafelyComputeMediaRatio(_In_ IMediaRatio* ratio_no_ref) {
@@ -410,16 +416,58 @@ HRESULT CreateMediaCaptureInitializationSettings(
   return hr;
 }
 
+HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
+                              _In_ HANDLE event_completed_handle,
+                              _In_ DWORD timeout_ms) {
+  HRESULT hr = S_OK;
+  AsyncStatus async_status;
+
+  if (SUCCEEDED(hr)) {
+    hr = async_info ? S_OK : RPC_E_INVALID_PARAMETER;
+  }
+
+  // Gets the operation status to check if operation started before waiting.
+  if (SUCCEEDED(hr)) {
+    hr = async_info->get_Status(&async_status);
+  }
+
+  if (SUCCEEDED(hr)) {
+    if (async_status == AsyncStatus::Started) {
+      DWORD trigger_event =
+          ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE);
+      if (trigger_event == WAIT_OBJECT_0) {
+        hr = S_OK;
+      } else if (trigger_event == WAIT_TIMEOUT) {
+        RTC_LOG(LS_ERROR) << "Wait operation took longer than " << timeout_ms
+                          << " ms.";
+        hr = RPC_E_TIMEOUT;
+      } else {
+        RTC_LOG(LS_ERROR) << "Wait operation did not succeeded. Error: "
+                          << trigger_event << " " << GetLastError();
+        hr = E_FAIL;
+      }
+    } else if (async_status == AsyncStatus::Completed) {
+      RTC_LOG(LS_WARNING)
+          << "Wait operation didn't wait because async operation "
+             "has been completed already.";
+      hr = S_OK;
+    } else {
+      RTC_LOG(LS_ERROR) << "Something happened to the async operation. Error: "
+                        << async_status;
+    }
+  }
+
+  return hr;
+}
+
 HRESULT WaitForAsyncAction(
-    _In_ ::ABI::Windows::Foundation::IAsyncAction* p_async_action) {
+    _In_ ::ABI::Windows::Foundation::IAsyncAction* p_async_action,
+    _In_ DWORD timeout_ms) {
   HRESULT hr = S_OK;
   HRESULT hr_async_error = S_OK;
   ComPtr<IAsyncAction> async_action(p_async_action);
   ComPtr<IAsyncInfo> async_info;
   HANDLE event_completed_handle = NULL;
-  // This function might be used for waitinng user for granting camera and
-  // microphone permissions. Let's wait up to timeout_ms for that.
-  const DWORD timeout_ms = 180000;
 
   APTTYPE apt_type;
   APTTYPEQUALIFIER apt_qualifier;
@@ -428,6 +476,12 @@ HRESULT WaitForAsyncAction(
   // The caller shouldn't be running on the UI thread (STA).
   if (SUCCEEDED(hr) && (apt_type != APTTYPE_MTA)) {
     RTC_LOG(LS_ERROR) << "Waiting in a non-MTA thread. Deadlocks might occur.";
+  }
+
+  // IAsyncInfo::get_Status is needed to check if operation started and if any
+  // errors happened.
+  if (SUCCEEDED(hr)) {
+    hr = async_action.As(&async_info);
   }
 
   // Creates the Event to be used to block and suspend until the async
@@ -462,10 +516,8 @@ HRESULT WaitForAsyncAction(
 
   // Block and suspend thread until the async operation finishes or timeout.
   if (SUCCEEDED(hr)) {
-    hr = ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE) ==
-                 WAIT_OBJECT_0
-             ? S_OK
-             : E_FAIL;
+    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle,
+                               timeout_ms);
   }
 
   if (event_completed_handle) {
@@ -473,10 +525,6 @@ HRESULT WaitForAsyncAction(
   }
 
   // Checks if async operation completed successfully.
-  if (SUCCEEDED(hr)) {
-    hr = async_action.As(&async_info);
-  }
-
   if (SUCCEEDED(hr)) {
     hr = async_info->get_ErrorCode(&hr_async_error);
   }

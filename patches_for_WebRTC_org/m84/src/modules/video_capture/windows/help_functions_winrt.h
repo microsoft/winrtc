@@ -48,8 +48,13 @@ HRESULT GetMediaCaptureWithInitSettings(
         initialization_settings,
     _COM_Outptr_ ::ABI::Windows::Media::Capture::IMediaCapture** media_capture);
 
+HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
+                              _In_ HANDLE event_completed_handle,
+                              _In_ DWORD timeout_ms);
+
 HRESULT WaitForAsyncAction(
-    _In_ ::ABI::Windows::Foundation::IAsyncAction* async_action);
+    _In_ ::ABI::Windows::Foundation::IAsyncAction* async_action,
+    _In_ DWORD timeout_ms = 5000);
 
 template <typename T>
 HRESULT WaitForAsyncOperation(
@@ -75,6 +80,12 @@ HRESULT WaitForAsyncOperation(
   // The caller shouldn't be running on the UI thread (STA).
   if (SUCCEEDED(hr) && (apt_type != APTTYPE_MTA)) {
     RTC_LOG(LS_ERROR) << "Waiting in a non-MTA thread. Deadlocks might occur.";
+  }
+
+  // IAsyncInfo::get_Status is needed to check if operation started and if any
+  // errors happened.
+  if (SUCCEEDED(hr)) {
+    hr = async_op.template As<IAsyncInfo>(&async_info);
   }
 
   // Creates the Event to be used to block and suspend until the async
@@ -107,21 +118,14 @@ HRESULT WaitForAsyncOperation(
             .Get());
   }
 
+  // Block and suspend thread until the async operation finishes or timeout.
   if (SUCCEEDED(hr)) {
-    // Block and suspend thread until the async operation finishes or timeout.
-    hr = ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE) ==
-                 WAIT_OBJECT_0
-             ? S_OK
-             : E_FAIL;
+    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle,
+                               timeout_ms);
   }
 
   if (event_completed_handle) {
     ::CloseHandle(event_completed_handle);
-  }
-
-  if (SUCCEEDED(hr)) {
-    // Checks if async operation completed successfully.
-    hr = async_op.template As<IAsyncInfo>(&async_info);
   }
 
   if (SUCCEEDED(hr)) {
