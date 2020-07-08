@@ -9,12 +9,12 @@ call git config --global user.email "<>"
 if errorlevel 1 goto :error
 
 echo.
-echo Setting the WEBRTCM80_ROOT enviornment variable...
-set WEBRTCM80_ROOT=c:\webrtc\src
+echo Setting the WEBRTCM84_ROOT enviornment variable...
+set WEBRTCM84_ROOT=c:\webrtc\src
 
 echo.
 echo Running the batch file that will patch all the necessary repos from the WebRTC code base...
-..\patches_for_WebRTC_org\m80\patchWebRTCM80.cmd
+..\patches_for_WebRTC_org\m84\patchWebRTCM84.cmd
 if errorlevel 1 goto :error
 
 goto :exit
