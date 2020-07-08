@@ -42,7 +42,9 @@ git.exe am "%PATCH_DIR%3005-Adds-the-Media-Foundation-H264-encoder-and-decoder.p
 if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%3006-Disabling-switch-without-case-warning-for-aec3.patch"
 if errorlevel 1 goto :error
-git.exe am "%PATCH_DIR%3007-Do-not-push_back-in-foreach.patch
+git.exe am "%PATCH_DIR%3007-Do-not-push_back-in-foreach.patch"
+if errorlevel 1 goto :error
+git.exe am "%PATCH_DIR%3008-Fixing-UWP-build-for-time_utils.cc"
 if errorlevel 1 goto :error
 xcopy /Y /E /Q "%PATCH_DIR%\src" .
 if errorlevel 1 goto :error
