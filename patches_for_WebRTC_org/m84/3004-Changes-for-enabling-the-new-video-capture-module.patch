@@ -1,30 +1,36 @@
-From 46f1725b129e835118af27bee7875f3de2b51d93 Mon Sep 17 00:00:00 2001
+From 5169774305b034d977b5255d7aedb31dcf84ba7e Mon Sep 17 00:00:00 2001
 From: Augusto Righetto <aurighet@microsoft.com>
 Date: Mon, 29 Jun 2020 17:01:41 -0700
 Subject: [PATCH] Changes for enabling the new video capture module
 
 ---
- modules/video_capture/BUILD.gn                | 57 ++++++++++++-------
- modules/video_capture/video_capture_defines.h | 39 ++++++++++---
+ BUILD.gn                                      |  4 ++
+ modules/video_capture/BUILD.gn                | 53 ++++++++++++-------
+ modules/video_capture/video_capture_defines.h | 39 +++++++++++---
  .../windows/video_capture_factory_windows.cc  | 19 ++++++-
- webrtc.gni                                    |  9 +++
- 4 files changed, 95 insertions(+), 29 deletions(-)
+ webrtc.gni                                    |  9 ++++
+ 5 files changed, 95 insertions(+), 29 deletions(-)
 
-diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index 1c02412264..f8057a9f77 100644
---- a/modules/video_capture/BUILD.gn
-+++ b/modules/video_capture/BUILD.gn
-@@ -14,6 +14,9 @@ import("../../webrtc.gni")
- # use the internal capturer.
- rtc_library("video_capture_module") {
-   visibility = [ "*" ]
+diff --git a/BUILD.gn b/BUILD.gn
+index f7d15f47a9..bf2f4d42e9 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -249,6 +249,10 @@ config("common_config") {
+     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
+   }
+ 
 +  if (rtc_win_video_capture_winrt) {
 +    defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
 +  }
-   sources = [
-     "device_info_impl.cc",
-     "device_info_impl.h",
-@@ -64,28 +67,42 @@ if (!build_with_chromium) {
++
+   if (rtc_libvpx_build_vp9) {
+     defines += [ "RTC_ENABLE_VP9" ]
+   }
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index 1c02412264..3a99648410 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -64,28 +64,41 @@ if (!build_with_chromium) {
        deps += [ "../../media:rtc_media_base" ]
      }
      if (is_win) {
@@ -49,7 +55,6 @@ index 1c02412264..f8057a9f77 100644
 -          "windows/BasePin.cpp",
 -          "windows/MediaType.cpp",
 +      if (rtc_win_video_capture_winrt) {
-+        defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
 +        sources = [
 +          "windows/device_info_winrt.cc",
 +          "windows/device_info_winrt.h",
