@@ -454,6 +454,7 @@ HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
     } else {
       RTC_LOG(LS_ERROR) << "Something happened to the async operation. Error: "
                         << async_status;
+      hr = E_FAIL;
     }
   }
 
