@@ -404,7 +404,7 @@ HRESULT VideoCaptureWinRTInternal::StopCapture() {
     }
 
     if (SUCCEEDED(hr)) {
-      hr = WaitForAsyncAction(async_action.Get());
+      hr = WaitForAsyncAction(async_action.Get(), 250);
     }
   }
 

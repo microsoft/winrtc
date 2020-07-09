@@ -438,9 +438,21 @@ HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
       if (trigger_event == WAIT_OBJECT_0) {
         hr = S_OK;
       } else if (trigger_event == WAIT_TIMEOUT) {
-        RTC_LOG(LS_ERROR) << "Wait operation took longer than " << timeout_ms
-                          << " ms.";
-        hr = RPC_E_TIMEOUT;
+        HRESULT hr2 = async_info->get_Status(&async_status);
+        if (SUCCEEDED(hr2) && (async_status == AsyncStatus::Completed)) {
+          // The async operation might be completed before the put_Completed
+          // callback triggering event_completed_handle have chance to be
+          // defined. In that case, the event timesout, but the async
+          // operation might be successfully completed.
+          RTC_LOG(LS_WARNING)
+              << "Wait operation timedout, but async operation completed.";
+          hr = S_OK;
+        } else {
+          RTC_LOG(LS_ERROR)
+              << "Wait operation timedout. It took longer than " << timeout_ms
+              << " ms. hr2: " << hr2 << " Async Status: " << async_status;
+          hr = RPC_E_TIMEOUT;
+        }
       } else {
         RTC_LOG(LS_ERROR) << "Wait operation did not succeeded. Error: "
                           << trigger_event << " " << GetLastError();
