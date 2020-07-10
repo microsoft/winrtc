@@ -48,7 +48,6 @@ git.exe am "%PATCH_DIR%3008-Fixing-UWP-build-for-time_utils.cc"
 if errorlevel 1 goto :error
 xcopy /Y /E /Q "%PATCH_DIR%\src" .
 if errorlevel 1 goto :error
-popd
 
 git.exe add modules/audio_device/win/audio_device_core_win.*
 if errorlevel 1 goto :error
@@ -64,6 +63,8 @@ git.exe add modules/video_coding/codecs/h264/win/*.* modules/video_coding/codecs
 if errorlevel 1 goto :error
 git.exe commit -m "MF based H264 codec"
 if errorlevel 1 goto :error
+
+popd
 
 goto :exit
 
