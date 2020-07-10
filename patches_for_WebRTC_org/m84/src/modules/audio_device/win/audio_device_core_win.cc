@@ -66,6 +66,63 @@ const size_t MAXERRORLENGTH = 256;
 const size_t MIN_CORE_SPEAKER_VOLUME = 0;
 const size_t MAX_CORE_SPEAKER_VOLUME = 100;
 
+HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
+                              _In_ HANDLE event_completed_handle,
+                              _In_ DWORD timeout_ms) {
+  HRESULT hr = S_OK;
+  AsyncStatus async_status;
+
+  if (SUCCEEDED(hr)) {
+    hr = async_info ? S_OK : RPC_E_INVALID_PARAMETER;
+  }
+
+  // Gets the operation status to check if operation started before waiting.
+  if (SUCCEEDED(hr)) {
+    hr = async_info->get_Status(&async_status);
+  }
+
+  if (SUCCEEDED(hr)) {
+    if (async_status == AsyncStatus::Started) {
+      DWORD trigger_event =
+          ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE);
+      if (trigger_event == WAIT_OBJECT_0) {
+        hr = S_OK;
+      } else if (trigger_event == WAIT_TIMEOUT) {
+        HRESULT hr2 = async_info->get_Status(&async_status);
+        if (SUCCEEDED(hr2) && (async_status == AsyncStatus::Completed)) {
+          // The async operation might be completed before the put_Completed
+          // callback triggering event_completed_handle have chance to be
+          // defined. In that case, the event timesout, but the async
+          // operation might be successfully completed.
+          RTC_LOG(LS_WARNING)
+              << "Wait operation timedout, but async operation completed.";
+          hr = S_OK;
+        } else {
+          RTC_LOG(LS_ERROR)
+              << "Wait operation timedout. It took longer than " << timeout_ms
+              << " ms. hr2: " << hr2 << " Async Status: " << async_status;
+          hr = RPC_E_TIMEOUT;
+        }
+      } else {
+        RTC_LOG(LS_ERROR) << "Wait operation did not succeeded. Error: "
+                          << trigger_event << " " << GetLastError();
+        hr = E_FAIL;
+      }
+    } else if (async_status == AsyncStatus::Completed) {
+      RTC_LOG(LS_WARNING)
+          << "Wait operation didn't wait because async operation "
+             "has been completed already.";
+      hr = S_OK;
+    } else {
+      RTC_LOG(LS_ERROR) << "Something happened to the async operation. Error: "
+                        << async_status;
+      hr = E_FAIL;
+    }
+  }
+
+  return hr;
+}
+
 // ----------------------------------------------------------------------------
 //  _TraceCOMError
 // ----------------------------------------------------------------------------
@@ -180,7 +237,7 @@ struct DeviceHelper {
         DEVICE_CLASS, &async_op_device_info_collection));
 
     // Block and suspend thread until the async operation finishes or timeouts.
-    THR(WaitForAsyncOperation(async_op_device_info_collection));
+    THR(WaitForAsyncOperation(async_op_device_info_collection.Get()));
 
     // Returns device collection if async operation completed successfully.
     THR(async_op_device_info_collection->GetResults(&device_collection));
@@ -209,7 +266,7 @@ struct DeviceHelper {
         DEVICE_CLASS, &async_op_device_info_collection));
 
     // Block and suspend thread until the async operation finishes or timeouts.
-    THR(WaitForAsyncOperation(async_op_device_info_collection));
+    THR(WaitForAsyncOperation(async_op_device_info_collection.Get()));
 
     // Returns device collection if async operation completed successfully.
     THR(async_op_device_info_collection->GetResults(&device_collection));
@@ -277,7 +334,7 @@ struct DeviceHelper {
         DEVICE_CLASS, &async_op_device_info_collection));
 
     // Block and suspend thread until the async operation finishes or timeouts.
-    THR(WaitForAsyncOperation(async_op_device_info_collection));
+    THR(WaitForAsyncOperation(async_op_device_info_collection.Get()));
 
     // Returns device collection if async operation completed successfully.
     THR(async_op_device_info_collection->GetResults(&device_collection));
@@ -356,7 +413,7 @@ struct DeviceHelper {
                                                 &async_operation));
 
     // Block and suspend thread until the async operation finishes or timeouts.
-    THR(WaitForAsyncOperation(async_operation));
+    THR(WaitForAsyncOperation(async_operation.Get()));
 
     THR(async_operation->GetResults(
         _deviceInformation.ReleaseAndGetAddressOf()));
