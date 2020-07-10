@@ -50,6 +50,21 @@ xcopy /Y /E /Q "%PATCH_DIR%\src" .
 if errorlevel 1 goto :error
 popd
 
+git.exe add modules/audio_device/win/audio_device_core_win.*
+if errorlevel 1 goto :error
+git.exe commit -m "Audio device for UWP"
+if errorlevel 1 goto :error
+
+git.exe add modules/video_capture/windows/*_winrt.*
+if errorlevel 1 goto :error
+git.exe commit -m "Video capture for UWP"
+if errorlevel 1 goto :error
+
+git.exe add modules/video_coding/codecs/h264/win/*.* modules/video_coding/codecs/h264/win_from_old_master/*.*
+if errorlevel 1 goto :error
+git.exe commit -m "MF based H264 codec"
+if errorlevel 1 goto :error
+
 goto :exit
 
 :missingenv
