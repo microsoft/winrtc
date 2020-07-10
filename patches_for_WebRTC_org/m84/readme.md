@@ -44,13 +44,12 @@ WebRTC uses Chromium's build tools named **depot_tools**. You can download it wi
 curl https://storage.googleapis.com/chrome-infra/depot_tools.zip --output depot_tools.zip
 ```
 
-Use the following command to open the zip file in File Explorer.
+Use the following command to unzip depot_tools in the root folder of the c: drive.
 
 ```shell
-RunDll32.exe zipfldr.dll,RouteTheCall depot_tools.zip
+mkdir c:\depot_tools
+tar -xf depot_tools.zip -C c:\depot_tools
 ```
-
-Click on the **Extract all** button and extract the contents of the zip file into the root of the C: drive (**C:\depot_tools**).
 
 Let's not clutter our dev box, so feel free to delete the depot_tools.zip file.
 
