@@ -20,7 +20,7 @@ index f7d15f47a9..bf2f4d42e9 100644
    }
  
 +  if (rtc_win_video_capture_winrt) {
-+    defines = [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
++    defines += [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
 +  }
 +
    if (rtc_libvpx_build_vp9) {
