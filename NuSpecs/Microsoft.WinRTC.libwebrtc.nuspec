@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.WinRTC.libwebrtc</id>
+        <version>84.0.3-alpha</version>
+        <authors>Microsoft</authors>
+        <owners>Microsoft</owners>
+        <projectUrl>http://github.com/microsoft/winrtc</projectUrl>
+        <license type="file">license.txt</license>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <releaseNotes>First drop</releaseNotes>
+        <description>Core utility functions for web applications</description>
+        <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+        <tags>webrtc uwp windows native rtc real time communication</tags>
+        <dependencies>
+	    <group targetFramework="native" />
+        </dependencies>
+    </metadata>
+
+    <files>
+        <file src="license.txt"/>
+        <file src="../output/msvc/uwp/Release/x64/obj/webrtc.lib" target="lib/native/Release/x64/v142" />
+        <file src="include/**/*.h" target="build/native" />
+        <file src="Microsoft.WinRTC.libwebrtc.props" target="build/native" />
+    </files>
+</package>
+
