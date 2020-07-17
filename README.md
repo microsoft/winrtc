@@ -39,24 +39,9 @@ For our next release, we are proactively working on:
 
 _We want to hear from you!_
 
-File a [new issue!](https://github.com/microsoft/ProjectReunion/issues/new/choose) Tell us what problem you're
+File a [new issue!](https://github.com/microsoft/winrtc/issues/new/choose) Tell us what problem you're
 trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app.  Bonus
 points if there's a gist or existing repo we can look at with you.
-
-
-1. **[Ask a question](https://github.com/microsoft/ProjectReunion/issues/new?assignees=&labels=question&template=question.md&title=Question%3A+%5Byour+question+here%5D)**<br>
-    Also, have a look at our [frequently asked questions](docs/faq.md) page which we will update periodically.
-
-2. **[Start a discussion](https://github.com/microsoft/ProjectReunion/discussions)**<br>
-   Discussions can be about any topics or ideas related to Project Reunion. For example,
-   you might start a Discussion issue to see if others are interested in a cool new idea
-   you've been thinking about that isn't quite ready to be filed as a more formal Feature Proposal.
-
-3. **[Make a feature proposal](https://github.com/microsoft/ProjectReunion/issues/new?assignees=&labels=feature+proposal&template=feature-proposal.md&title=)**<br>
-   What components do you want to see in Project Reunion? For example you can propose a new API on an existing type, or an idea for a new API.
-   It's fine if you don't have all the details: you can start with a summary and rationale.
-
-**Over time, we will add WinRTC code and samples into this repo and provide code contribution/developer guidelines.**
 
 Read more about the [contribution guide here](docs/contributor-guide.md).
 
