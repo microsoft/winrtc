@@ -7,7 +7,7 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 #### Patching WebRTC M84 
 
-At this moment, you'll find the patch files required for building WebRTC for Windows. We recommend applying the [`M84 patch`](patches_for_WebRTC_org/m84), which has the most recent secuirty updates and features. As is, the WebRTC code base has a Win32 port that doesn't build for UWP. You'll able to build a recent version of WebRTC with the patches available by this repo.
+As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [`M84 patch`](patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
 
 These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contribute changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible. 
 
