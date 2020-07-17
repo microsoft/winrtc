@@ -1,10 +1,12 @@
 # WinRTC
 
+## What is WinRTC? 
+
 The WinRTC project aims to host everything needed to build apps with interoperable real time communications for modern Windows. It brings the power of WebRTC to modern Windows apps written in C#, C++ and VB. With WinRTC, native Windows apps can have real time communications with web browsers via WebRTC.
 
-# Goodies
+## How can I use WinRTC? 
 
-## Patching WebRTC M80
+### Patching WebRTC M80
 
 At this moment, you'll find the patch files required for building WebRTC for modern Windows. As is, the WebRTC code base has a Win32 port that doesn't build for UWP. You'll able to build a recent version of WebRTC with the patches available by this repo.
 
@@ -14,28 +16,35 @@ We know that building a patched WebRTC code base from scratch probably is not th
 
 We're in our earlier stages, stay tuned because we're going to be developing this in the open.
 
-## Wrappers for WinRT
+### Wrappers for WinRT
 
 The `WebRtcWrapper` folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. We're working on NuGet packages for these wrappers. It takes more than a .nuspec file to have binary code shipped in a NuGet package.
 
 This is a work in progress, and we would love to hear from you.
 
-## Sample code for building a Xaml component
+## Contributing
+We want to hear from you!
 
-The MyFirstWinRtc folder contains sample code of a Xaml component and an UWP app using the WinRt/C++ projection. This sample code uses https://appr.tc as signaling, network traversal and another peer to connect with. The code is in this folder is for educational purposes only.
+File a new issue! Tell us what problem you're trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app. Bonus points if there's a gist or existing repo we can look at with you.
 
-This is a work in progress, and we would love to hear from you.
+  1. Ask a question
+  
+  Also, have a look at our frequently asked questions page which we will update periodically.
+	
+  2. Start a discussion
+  
+  Discussions can be about any topics or ideas related to WinRTC. For example, you might start a Discussion issue to see if others are interested in a cool new idea you've been thinking about that isn't quite ready to be filed as a more formal Feature Proposal.
 
-# Contributing
+  3. Make a feature proposal
+  
+  What components do you want to see in WinRTC? For example you can propose a new API on an existing type, or an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+Over time, we will add WinRTC code and samples into this repo and provide code contribution/developer guidelines.
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+### License Info
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution.
+
+## Code of Conduct
+
+This project has adopted the Microsoft Open Source Code of Conduct.
