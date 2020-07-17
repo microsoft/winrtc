@@ -56,8 +56,8 @@ Over time, we will add WinRTC code and samples into this repo and provide code c
 
 ### License Info
 
-Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution.
+Most contributions require you to agree to a [Contributor License Agreement (CLA)](https://cla.opensource.microsoft.com/) declaring that you have the right to, and actually do, grant us the rights to use your contribution.
 
 ## Code of Conduct
 
-This project has adopted the Microsoft Open Source Code of Conduct.
+This project has adopted the [Microsoft Open Source Code of Conduct].
