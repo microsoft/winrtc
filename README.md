@@ -38,7 +38,7 @@ For our next release, we are proactively working on:
 
 _Coming soon!_
 
-Let us know what components you would like to see us work on by making [a feature request](https://github.com/microsoft/winrtc/issues/new?assignees=&labels=&template=feature_request.md&title=)! For example, you can propose a new API on an existing type, or an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
+As we plan out our road map, et us know what components you would like to see us work on in the near-future by making [a feature request](https://github.com/microsoft/winrtc/issues/new?assignees=&labels=&template=feature_request.md&title=)! For example, you can propose a new API on an existing type, or an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
 
 ## Contributing
 
