@@ -43,7 +43,7 @@ File a [new issue!](https://github.com/microsoft/winrtc/issues/new/choose) Tell 
 trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app.  Bonus
 points if there's a gist or existing repo we can look at with you.
 
-Read more about the [contribution guide here](docs/contributor-guide.md).
+Read more about the [contribution guide here](CONTRIBUTING.md).
 
 ### License Info
 
