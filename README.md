@@ -22,6 +22,19 @@ The `WebRtcWrapper` folder contains an alpha version of WinRT wrappers for WebRT
 
 This is a work in progress, and we would love to hear from you.
 
+## What's New
+### July 2020 Update
+- Working on the improvements required for leveraging the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
+- Port WebRTC-UWP H264 Encoder & Decoder over WinRTC. 
+- Port WebRTC-UWP supporting Camera Profiles over WinRTC. 
+- Enabled libWebRTC built-in camera capture module for Arm64 devices. 
+
+Created a public documentation on GitHub wiki: 
+- Newcomers to WinRTC have documentation about how to change libWebRTC build system. 
+
+For our next release, we are proactively working on:
+- Ensuring that NuGet packages are available.
+
 ## Contributing
 We want to hear from you!
 
