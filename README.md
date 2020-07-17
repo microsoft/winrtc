@@ -1,12 +1,11 @@
 # WinRTC
 
-## What is WinRTC? 
-
+### What is WinRTC? 
 The WinRTC project aims to host everything needed to build apps with interoperable real time communications for modern Windows. It brings the power of WebRTC to modern Windows apps written in C#, C++ and VB. With WinRTC, native Windows apps can have real time communications with web browsers via WebRTC.
 
-## How can I use WinRTC? 
+### How can I use WinRTC? 
 
-### Patching WebRTC M80
+#### Patching WebRTC M80
 
 At this moment, you'll find the patch files required for building WebRTC for modern Windows. As is, the WebRTC code base has a Win32 port that doesn't build for UWP. You'll able to build a recent version of WebRTC with the patches available by this repo.
 
@@ -16,7 +15,7 @@ We know that building a patched WebRTC code base from scratch probably is not th
 
 We're in our earlier stages, stay tuned because we're going to be developing this in the open.
 
-### Wrappers for WinRT
+#### Wrappers for WinRT
 
 The `WebRtcWrapper` folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. We're working on NuGet packages for these wrappers. It takes more than a .nuspec file to have binary code shipped in a NuGet package.
 
@@ -34,6 +33,12 @@ Created a public documentation on GitHub wiki: 
 
 For our next release, we are proactively working on:
 - Ensuring that NuGet packages are available.
+
+## Road Map
+
+_Coming soon!_
+
+Know what components you would like to see in WinRTC? [Make a feature proposal!](https://github.com/microsoft/winrtc/issues/new?assignees=&labels=&template=feature_request.md&title=) For example you can propose a new API on an existing type, or an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
 
 ## Contributing
 
