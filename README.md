@@ -24,7 +24,7 @@ The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edi
 
 A big goal for us this month was to improve the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
 
-We'd also stress feedback is critical. We know there are areas for improvement on _____. We would love feedback so we can improve. We also would love to know if you want us to be more ________. 
+We'd also stress feedback is critical. We know there are areas for improvement on _____. We would love feedback so we can improve. 
 
 Lastly, we'd like to thank everyone who filed a bug, gave feedback or made a pull-request. The WinRTC team is extremely grateful to have the support of an amazing active community.
 
