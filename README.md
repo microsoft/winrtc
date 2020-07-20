@@ -24,7 +24,7 @@ This is a work in progress, and we would love to hear from you.
 ## What's New
 ### July 2020 Update
 
-Our goals for our next release cycle had one big goal, improve the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
+A big goal for us this month was to improve the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
 
 We'd also stress feedback is critical. We know there are areas for improvement on _____. We would love feedback so we can improve. We also would love to know if you want us to be more ________. 
 
