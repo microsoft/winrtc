@@ -23,16 +23,23 @@ This is a work in progress, and we would love to hear from you.
 
 ## What's New
 ### July 2020 Update
-- Working on the improvements required for leveraging the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
-- Port WebRTC-UWP H264 Encoder & Decoder over WinRTC. 
-- Port WebRTC-UWP supporting Camera Profiles over WinRTC. 
-- Enabled libWebRTC built-in camera capture module for Arm64 devices. 
+
+Our goals for our next release cycle had one big goal, ______. 
+
+We'd also stress feedback is critical. We know there are areas for improvement on _____. We would love feedback so we can improve. We also would love to know if you want us to be more ________. 
+
+Lastly, we'd like to thank everyone who filed a bug, gave feedback or made a pull-request. The WinRTC team is extremely grateful to have the support of an amazing active community.
+
+Improved the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC: 
+- Port WebRTC-UWP H264 Encoder & Decoder over WinRTC
+- Port WebRTC-UWP supporting Camera Profiles over WinRTC
+- Enabled libWebRTC built-in camera capture module for Arm64 devices
 
 Created a public documentation on GitHub wiki: 
-- Newcomers to WinRTC have documentation about how to change libWebRTC build system. 
+- Newcomers to WinRTC have documentation about how to change libWebRTC build system 
 
 For our next release, we are proactively working on:
-- Ensuring that NuGet packages are available.
+- NuGet packages for WinRTC wrappers
 
 ## Road Map
 
