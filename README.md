@@ -5,7 +5,7 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 <img src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png"/>
 
-The first layer builds WinRTC on UWP and Win32. On top of that, we have WinRTC projections, or WinRTC library, that you can link with your applications. Finally, we have a NuGet package that is a XAML component. Regardless of whether you are using Win32 or C#, you will be able to use WinRTC in your native windows apps. 
+The diagram above showcases the architecture of WinRTC. The first layer builds WinRTC on UWP and Win32. On top of that, we have WinRTC projections, or WinRTC library, that you can link with your applications. Finally, we have a NuGet package that is a XAML component. Regardless of whether you are using Win32 or C#, you will be able to use WinRTC in your native windows apps. 
 
 ### How can I use WinRTC? 
 
