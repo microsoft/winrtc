@@ -44,7 +44,7 @@ We're in the midst of building our road map to showcase which features we'll be 
 
 _Coming soon!_
 
-Have an urgent question? Don't hesitate to [ask us](https://github.com/microsoft/winrtc/blob/documentation-edits/.github/ISSUE_TEMPLATE/Question.md). 
+Have an urgent question? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose). 
 
 ## Contributing
 
