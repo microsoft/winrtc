@@ -5,9 +5,7 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 [What's New](#whats-new)   |   [Road Map](#road-map)   |   [FAQ](#faq)   |   [Contributing to WinRTC](#contributing)
 
-## Installation 
-
-### How can I use WinRTC? 
+## Installing and running WinRTC
 
 #### Patching WebRTC M84 
 
