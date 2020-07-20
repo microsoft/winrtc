@@ -3,9 +3,9 @@
 ### What is WinRTC? 
 The WinRTC project aims to host everything needed to build apps with interoperable real time communications for windows. It brings the power of WebRTC to modern Windows apps written in C#, C++ and VB. With WinRTC, native Windows apps can have real time communications with web browsers via WebRTC.
 
-#### WinRTC architecture 
-
 <img src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png"/>
+
+WinRTC sits atop the this framework. It has the following capabilities based on this architecture. 
 
 ### How can I use WinRTC? 
 
