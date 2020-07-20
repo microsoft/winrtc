@@ -36,7 +36,7 @@ Lastly, we'd like to thank everyone who filed a bug, gave feedback or made a pul
 - Created public documentation on GitHub wiki about how to change libWebRTC build system 
 
 For our next release, we are proactively working on:
-- NuGet packages for WinRTC wrappers
+- Creating NuGet packages for WinRTC wrappers
 
 ## Road Map
 
