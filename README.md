@@ -17,8 +17,6 @@ These patches are being contributed back. Some of these patches were already mer
 
 The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edits/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
 
-This is a work in progress, and we would love to hear from you.
-
 ## What's New
 ### July 2020 Update
 
