@@ -33,7 +33,26 @@ echo Copying contents...
 cd /D "%~dp0"
 if errorlevel 1 goto :error
 
-xcopy /e /i c:\webrtc\src\out ..\output
+xcopy /s /i c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\x64\
+xcopy /s /i c:\webrtc\src\api\*.h ..\include\api\
+xcopy /s /i c:\webrtc\src\audio\*.h ..\include\audio\
+xcopy /s /i c:\webrtc\src\base\*.h ..\include\base\
+xcopy /s /i c:\webrtc\src\call\*.h ..\include\call\
+xcopy /s /i c:\webrtc\src\common_audio\*.h ..\include\common_audio\
+xcopy /s /i c:\webrtc\src\common_video\*.h ..\include\common_video\
+xcopy /s /i c:\webrtc\src\data\*.h ..\include\data\
+xcopy /s /i c:\webrtc\src\logging\*.h ..\include\logging\
+xcopy /s /i c:\webrtc\src\media\*.h ..\include\media\
+xcopy /s /i c:\webrtc\src\modules\*.h ..\include\modules\
+xcopy /s /i c:\webrtc\src\p2p\*.h ..\include\p2p\
+xcopy /s /i c:\webrtc\src\pc\*.h ..\include\pc\
+xcopy /s /i c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
+xcopy /s /i c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
+xcopy /s /i c:\webrtc\src\sdk\*.h ..\include\sdk\
+xcopy /s /i c:\webrtc\src\stats\*.h ..\include\stats\
+xcopy /s /i c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
+xcopy /s /i c:\webrtc\src\video\*.h ..\include\video\
+xcopy /s /i c:\webrtc\src\common_types.h ..\include\
 if errorlevel 1 goto :error
 
 goto :exit
