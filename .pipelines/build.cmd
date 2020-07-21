@@ -33,7 +33,7 @@ echo Copying contents...
 cd /D "%~dp0"
 if errorlevel 1 goto :error
 
-xcopy /s /i c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\x64\
+xcopy /s /i c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
 xcopy /s /i c:\webrtc\src\api\*.h ..\include\api\
 xcopy /s /i c:\webrtc\src\audio\*.h ..\include\audio\
 xcopy /s /i c:\webrtc\src\base\*.h ..\include\base\
