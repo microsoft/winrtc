@@ -15,7 +15,7 @@ Our focus lies on enabling compatibility and key interoperability for our develo
 
 ## What is the architecture of WinRTC?
 
-<PIC>
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
 The diagram above showcases the architecture of WinRTC. On the right side of the dotted green line, we have the web developer platform, where developers can build a Progressive Web App (PWA) or a WebApp. This is built on top of the Chrome/Anaheim framework, which sits on top of a Win32 App. This entire experience is built upon the foundation laid down by WebRTC.org
 
