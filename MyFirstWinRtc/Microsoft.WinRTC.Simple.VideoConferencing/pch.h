@@ -4,7 +4,7 @@
 #pragma once
 
 // abseil is using some C++ features that were deprecated in C++17.
-// Since ee build with warning as errors. The following preprocessor
+// Since we build with warning as errors. The following preprocessor
 // variables make STL to not emit the warnings.
 #define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
