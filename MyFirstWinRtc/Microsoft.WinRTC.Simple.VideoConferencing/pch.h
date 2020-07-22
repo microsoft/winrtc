@@ -3,6 +3,12 @@
 
 #pragma once
 
+// abseil is using some C++ features that were deprecated in C++17.
+// Since ee build with warning as errors. The following preprocessor
+// variables make STL to not emit the warnings.
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+
 #include <unknwn.h>
 #include <winrt/base.h>
 
@@ -31,7 +37,7 @@
 #include <winrt/Windows.Web.Http.Headers.h>
 #include <winrt/Windows.Web.Http.h>
 
-#include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
+#include <winrt/Windows.ApplicationModel.h>
 
 #include "winrt/Microsoft.WinRtc.Simple.VideoConferencing.h"
