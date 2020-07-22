@@ -33,28 +33,32 @@ echo Copying contents...
 cd /D "%~dp0"
 if errorlevel 1 goto :error
 
-xcopy /s /i c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
-xcopy /s /i c:\webrtc\src\api\*.h ..\include\api\
-xcopy /s /i c:\webrtc\src\audio\*.h ..\include\audio\
-xcopy /s /i c:\webrtc\src\base\*.h ..\include\base\
-xcopy /s /i c:\webrtc\src\call\*.h ..\include\call\
-xcopy /s /i c:\webrtc\src\common_audio\*.h ..\include\common_audio\
-xcopy /s /i c:\webrtc\src\common_video\*.h ..\include\common_video\
-xcopy /s /i c:\webrtc\src\data\*.h ..\include\data\
-xcopy /s /i c:\webrtc\src\logging\*.h ..\include\logging\
-xcopy /s /i c:\webrtc\src\media\*.h ..\include\media\
-xcopy /s /i c:\webrtc\src\modules\*.h ..\include\modules\
-xcopy /s /i c:\webrtc\src\p2p\*.h ..\include\p2p\
-xcopy /s /i c:\webrtc\src\pc\*.h ..\include\pc\
-xcopy /s /i c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
-xcopy /s /i c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
-xcopy /s /i c:\webrtc\src\sdk\*.h ..\include\sdk\
-xcopy /s /i c:\webrtc\src\stats\*.h ..\include\stats\
-xcopy /s /i c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
-xcopy /s /i c:\webrtc\src\video\*.h ..\include\video\
-xcopy /s /i c:\webrtc\src\common_types.h ..\include\
-if errorlevel 1 goto :error
+call :copy c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
+call :copy c:\webrtc\src\api\*.h ..\include\api\
+call :copy c:\webrtc\src\audio\*.h ..\include\audio\
+call :copy c:\webrtc\src\base\*.h ..\include\base\
+call :copy c:\webrtc\src\call\*.h ..\include\call\
+call :copy c:\webrtc\src\common_audio\*.h ..\include\common_audio\
+call :copy c:\webrtc\src\common_video\*.h ..\include\common_video\
+call :copy c:\webrtc\src\data\*.h ..\include\data\
+call :copy c:\webrtc\src\logging\*.h ..\include\logging\
+call :copy c:\webrtc\src\media\*.h ..\include\media\
+call :copy c:\webrtc\src\modules\*.h ..\include\modules\
+call :copy c:\webrtc\src\p2p\*.h ..\include\p2p\
+call :copy c:\webrtc\src\pc\*.h ..\include\pc\
+call :copy c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
+call :copy c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
+call :copy c:\webrtc\src\sdk\*.h ..\include\sdk\
+call :copy c:\webrtc\src\stats\*.h ..\include\stats\
+call :copy c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
+call :copy c:\webrtc\src\video\*.h ..\include\video\
+call :copy c:\webrtc\src\common_types.h ..\include\
 
+goto :exit
+
+:copy
+xcopy /s /i %~1 %~2
+if errorlevel 1 goto :error
 goto :exit
 
 :error

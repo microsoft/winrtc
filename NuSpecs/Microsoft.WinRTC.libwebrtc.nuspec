@@ -18,7 +18,7 @@
     </metadata>
 
     <files>
-        <file src="license.txt"/>
+        <file src="license.txt" />
         <file src="..\output\msvc\uwp\Release\x64\obj\webrtc.lib" target="lib\native\Release\x64\v142" />
         <file src="..\include\**\*.h" target="build\native" />
         <file src="Microsoft.WinRTC.libwebrtc.props" target="build\native" />
