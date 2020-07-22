@@ -3,6 +3,11 @@
 
 #pragma once
 
+//Silencing the C++17 depreciated feature that causing visual studio to error during Build.
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+
+
 #include <unknwn.h>
 #include <winrt/base.h>
 
