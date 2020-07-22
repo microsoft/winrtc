@@ -33,30 +33,28 @@ echo Copying contents...
 cd /D "%~dp0"
 if errorlevel 1 goto :error
 
-call :copy c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
-call :copy c:\webrtc\src\api\*.h ..\include\api\
-call :copy c:\webrtc\src\audio\*.h ..\include\audio\
-call :copy c:\webrtc\src\base\*.h ..\include\base\
-call :copy c:\webrtc\src\call\*.h ..\include\call\
-call :copy c:\webrtc\src\common_audio\*.h ..\include\common_audio\
-call :copy c:\webrtc\src\common_video\*.h ..\include\common_video\
-call :copy c:\webrtc\src\data\*.h ..\include\data\
-call :copy c:\webrtc\src\logging\*.h ..\include\logging\
-call :copy c:\webrtc\src\media\*.h ..\include\media\
-call :copy c:\webrtc\src\modules\*.h ..\include\modules\
-call :copy c:\webrtc\src\p2p\*.h ..\include\p2p\
-call :copy c:\webrtc\src\pc\*.h ..\include\pc\
-call :copy c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
-call :copy c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
-call :copy c:\webrtc\src\sdk\*.h ..\include\sdk\
-call :copy c:\webrtc\src\stats\*.h ..\include\stats\
-call :copy c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
-call :copy c:\webrtc\src\video\*.h ..\include\video\
-call :copy c:\webrtc\src\common_types.h ..\include\
+call :copyFiles c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
+call :copyFiles c:\webrtc\src\api\*.h ..\include\api\
+call :copyFiles c:\webrtc\src\audio\*.h ..\include\audio\
+call :copyFiles c:\webrtc\src\base\*.h ..\include\base\
+call :copyFiles c:\webrtc\src\call\*.h ..\include\call\
+call :copyFiles c:\webrtc\src\common_audio\*.h ..\include\common_audio\
+call :copyFiles c:\webrtc\src\common_video\*.h ..\include\common_video\
+call :copyFiles c:\webrtc\src\logging\*.h ..\include\logging\
+call :copyFiles c:\webrtc\src\media\*.h ..\include\media\
+call :copyFiles c:\webrtc\src\modules\*.h ..\include\modules\
+call :copyFiles c:\webrtc\src\p2p\*.h ..\include\p2p\
+call :copyFiles c:\webrtc\src\pc\*.h ..\include\pc\
+call :copyFiles c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
+call :copyFiles c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
+call :copyFiles c:\webrtc\src\stats\*.h ..\include\stats\
+call :copyFiles c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
+call :copyFiles c:\webrtc\src\video\*.h ..\include\video\
+call :copyFiles c:\webrtc\src\common_types.h ..\include\
 
 goto :exit
 
-:copy
+:copyFiles
 xcopy /s /i %~1 %~2
 if errorlevel 1 goto :error
 goto :exit

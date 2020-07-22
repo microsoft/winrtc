@@ -8,8 +8,8 @@
         <projectUrl>http://github.com/microsoft/winrtc</projectUrl>
         <license type="file">license.txt</license>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
-        <releaseNotes>First drop</releaseNotes>
-        <description>Core utility functions for web applications</description>
+        <releaseNotes>Upgrading WinRTC with the WebRTC changes up to version m84. Bringing the Media Foundation based H264 encoder and decoder from the WebRTC-UWP project.</releaseNotes>
+        <description>This package contains a WebRTC static library and the header files to be used to build an UWP native app or component.</description>
         <copyright>© Microsoft Corporation. All rights reserved.</copyright>
         <tags>webrtc uwp windows native rtc real time communication</tags>
         <dependencies>
