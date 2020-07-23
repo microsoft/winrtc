@@ -9,7 +9,7 @@ The overall architecture looks something like this:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-You will notice the different scenarios in which WinRTC is used. For deeper look at our architecture, check out the FAQ!
+WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our FAQ.
 
 ## Installing and running WinRTC
 
@@ -17,7 +17,7 @@ You will notice the different scenarios in which WinRTC is used. For deeper look
 
 As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
 
-These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contribute changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible. 
+These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. 
 
 #### Wrappers for WinRT
 
@@ -30,8 +30,7 @@ A big goal for us this month was to improve the hardware accelerated capabilitie
 
 We'd like to thank everyone who filed a bug, gave feedback, or made a pull-request. The WinRTC team is extremely grateful to have the support of an amazing active community.
 
-
-
+In our most recent update, we have:
 - Added port WebRTC-UWP H264 Encoder & Decoder over WinRTC
 - Added port WebRTC-UWP supporting Camera Profiles over WinRTC
 - Enabled libWebRTC built-in camera capture module for Arm64 devices
@@ -48,9 +47,9 @@ We're in the midst of building our road map to showcase which features we'll be 
 
 ## FAQ
 
-_Coming soon!_
+Check out our [frequently asked questions](https://github.com/microsoft/winrtc/docs/FAQ.md) page which we will update periodically.
 
-Have an urgent question? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
+Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
 
 ## Contributing
 
