@@ -4,11 +4,11 @@ We will update this page periodically.
 ## What is WebRTC?
 WebRTC, or Web Real Time Communication, is an open source software for the web that is widely used to establish communication between two or more clients. It paves the road for real-time, plugin-free video, audio and data communication and enables  developers to build powerful video, audio, and data communication solutions. 
 	
-## How are WebRTC and WinRTC related?
-Built upon the pre-existing WebRTC architecture, WinRTC is Microsoft's open source software which enables real time communications for native windows applications. WinRTC streamlines the process of bringing WebRTC to Windows in more than just the browser by making it easier for our developers to use by having a lot less code, a lot less integration pieces to deal with and a lot less packages to install. 
-	
-## Why was Web/WinRTC developed? 
-Let's say Alice wants to talk to Bob. One possible way for them to coordinate the communication is by using a Signaling Server through which they can start the peer-to-peer communication. However, if Alice and Bob are behind two different firewalls they will have to use a STUN Server to figure out each other's public IP addresses. After that, they might need to use a Release Server to relay the communication. As a result, the procedure required to establish a secure connection between two peers can become complicated quickly, which is why WinRTC has been introduced to simply the process. 
+## Why was WebRTC developed? 
+Let’s say Alice wants to talk to Bob. One possible way for them to coordinate the communication is by using a Signaling Server through which they can start the peer-to-peer communication. However, if Alice and Bob are behind two different firewalls, they will have to use a STUN Server to figure out each other's public IP addresses. After that, they might need to use a Release Server to relay the communication. As a result, the procedure required to establish a secure connection between two peers can become complicated quickly, which is why WebRTC was introduced to simply the process. 
+
+## What is WinRTC, and how does it relate to WebRTC?
+WinRTC takes the beauty of real time communication outside of the web and brings into the windows native development platform. Built upon the pre-existing WebRTC architecture, WinRTC is Microsoft's open-source software which enables real time communication for native windows applications. It helps to maximize efficiency for developers by having a lot less code, a lot less integration pieces to deal with, and a lot less packages to install.
 	
 ## What are our guiding principles for building WinRTC?  
 Our focus lies on enabling compatibility and key interoperability for our developers so that they are not only able to call any web native APIs, but also be aligned with the community's standards and with the larger WebRTC code base. We also want to ensure that we contribute back the community standard. 
@@ -17,16 +17,35 @@ Our focus lies on enabling compatibility and key interoperability for our develo
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-The diagram above showcases the architecture of WinRTC. On the right side of the dotted green line, we have the web developer platform, where developers can build a Progressive Web App (PWA) or a WebApp. This is built on top of the Chrome/Anaheim framework, which sits on top of a Win32 App. This entire experience is built upon the foundation laid down by WebRTC.org
+The diagram above showcases the architecture of WinRTC. 
 
-On the left side of the diagram we have the windows native platform experience, where WinRTC enables developers to include real time communication in their native windows applications. 
+### Windows Native Development Platform
 
-Starting from the left side of the dotted green line, 
-* First developer builds a Win32 app, which sits on the WinRTC library, and that sits on WebRTC.org
-* Second developer builds a UWP app and they have the option to either include a XAML control, or go straight to using WinRTC, or even skip both of these and go straight to the WebRTC.org layer. 
-* Third developer builds a React Native for Windows application and that uses the XAML control on top of the WinRTC for the best WinRTC experience. 
-* Fourth developer builds a .Net app, which has the option to either use the XAML control or go straight to the WinRTC component. 
-* Fifth developer building a MixedReality SDK. This is purely UWP so this layer sits directly on top of WebRTC.org. 
+#### [`Mixed Reality SDK`](https://docs.microsoft.com/en-us/windows/mixed-reality/unity-development-overview)
+Mixed Reality Toolkit (MRTK) provides a set of components and features to accelerate cross-platform MR app development in Unity. The Mixed Reality SDK is purely UWP so this layer sits directly on top of WebRTC.  
+
+#### [`.Net`](https://dotnet.microsoft.com/)
+.Net is a free, cross-platform, open source developer platform for building many different types of applications. With .NET, you can use multiple languages, editors, and libraries to build for web, mobile, desktop, games, and IoT. When incorporating WinRTC, developers have the option to either use the XAML control or go directly to the WinRTC component.  
+
+#### [`React Native for Windows`](https://microsoft.github.io/react-native-windows/) 
+React Native is an open-source mobile application framework created by Facebook. React Native for Windows brings React Native support for the Windows 10 SDK. With this, you can use JavaScript to build native Windows apps for all devices supported by Windows 10 including PCs, tablets, 2-in-1s, Xbox, Mixed reality devices, etc. When incorporating WinRTC with React Native, use the XAML control on top of the WinRTC for the best WinRTC experience. 
+
+#### [`Universal Windows Platform (UWP)`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#uwp)
+This platform provides a common type system, APIs, and application model for all devices that run Windows 10. UWP applications can be native or managed. When incorporating WinRTC, they have the option to either include a XAML control, or go directly to using WinRTC, or even skip both and go straight to the WebRTC layer.
+
+#### [`Win32 app`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#win32) 
+This is the original platform for native C/C++ Windows applications that require direct access to Windows and hardware. This makes the Win32 API the platform of choice for applications that need the highest level of performance and direct access to system hardware. 
+
+### Web Developer Platform
+
+#### [`WebApp`](https://docs.microsoft.com/en-us/azure/devops/pipelines/targets/webapp?view=azure-devops&tabs=yaml)
+WebApps, provided under Azure App Service, are an HTTP-based service for hosting web applications, REST APIs, and mobile back ends. Developers can use their favorite language, be it .NET, .NET Core, Java, Ruby, Node.js, PHP, or Python. Applications run and scale with ease on both Windows and Linux-based environments.
+
+#### `Progressive Web App (PWA)` 
+A progressive web application is a type of application software delivered through the web, built using common web technologies including HTML, CSS and JavaScript.
+
+#### `Chrome/Anaheim` 
+Google Chrome is a cross-platform web browser developed by Google. It was first released in 2008 for Microsoft Windows, and was later ported to Linux, macOS, iOS, and Android where it is the default browser built into the OS.
 
 Since the entire infrastructure of WinRTC is build atop the WebRTC foundation, our team works hard to ensure that what we are building aligns with the larger WebRTC community's standards. 
 
