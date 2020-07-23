@@ -43,19 +43,19 @@ For our next release, we are proactively working on:
 
 _Coming soon!_
 
-We're in the midst of building our road map to showcase which features we'll be working on in the near-future. [You can help by filing issues for features you'd like to see!](https://github.com/microsoft/winrtc/tree/documentation-edits/.github/ISSUE_TEMPLATE) For example, you can propose an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
+We're in the midst of building our road map to showcase which features we'll be working on in the near-future. [You can help by filing issues for features you'd like to see!](https://github.com/microsoft/winrtc/issues/new/choose) For example, you can propose an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
 
 ## FAQ
 
 Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page which we will update periodically.
 
-Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/blob/documentation-edits/.github/ISSUE_TEMPLATE/Question.md)
+Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
 
 ## Contributing
 
 _We want to hear from you!_
 
-File a [new issue!](https://github.com/microsoft/winrtc/blob/documentation-edits/.github/ISSUE_TEMPLATE/Bug_Report.md) Tell us what problem you're
+File a [new issue!](https://github.com/microsoft/winrtc/issues/new/choose) Tell us what problem you're
 trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app.  Bonus
 points if there's a gist or existing repo we can look at with you.
 
