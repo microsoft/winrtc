@@ -33,18 +33,18 @@ Mixed Reality Toolkit (MRTK) provides a set of components and features to accele
 React Native is an open-source mobile application framework created by Facebook. React Native for Windows brings React Native support for the Windows 10 SDK. With this, you can use JavaScript to build native Windows apps for all devices supported by Windows 10 including PCs, tablets, 2-in-1s, Xbox, Mixed reality devices, etc. When incorporating WinRTC with React Native, use the XAML control on top of the WinRTC for the best WinRTC experience. 
 
 #### [`Universal Windows Platform (UWP) App`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#uwp)
-The Universal Windows Platform provides a common type system, APIs, and application model for all devices that run Windows 10. UWP applications can be native or managed. When incorporating WinRTC, they have the option to either include a XAML control, or go directly to using WinRTC, or even skip both and go straight to the WebRTC layer.
+The Universal Windows Platform provides a common type system, APIs, and application model for all devices that run Windows 10. UWP applications can be native or managed. When incorporating WinRTC, developers have the option to either include a XAML control, or go directly to using WinRTC, or even skip both and go straight to the WebRTC layer.
 
 #### [`Win32 App`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#win32) 
-Win32 is the original platform for native C/C++ Windows applications that require direct access to Windows and hardware. This makes the Win32 API the platform of choice for applications that need the highest level of performance and direct access to system hardware. 
+Win32 is the original platform for native C/C++ Windows applications that require direct access to Windows and hardware. This makes the Win32 API the platform of choice for applications that need the highest level of performance and direct access to system hardware. Developers creating a Win32 app have the option to incorporate WinRTC or WebRTC based on their needs. 
 
 ### Web Developer Platform
 
 #### [`WebApp`](https://docs.microsoft.com/en-us/azure/devops/pipelines/targets/webapp?view=azure-devops&tabs=yaml)
-WebApps, provided under Azure App Service, are an HTTP-based service for hosting web applications, REST APIs, and mobile back ends. Developers can use their favorite language, be it .NET, .NET Core, Java, Ruby, Node.js, PHP, or Python. Applications run and scale with ease on both Windows and Linux-based environments.
+WebApps, provided under Azure App Service, are an HTTP-based service for hosting web applications, REST APIs, and mobile back ends. Developers can use their favorite language, be it .NET, .NET Core, Java, Ruby, Node.js, PHP, or Python. Applications run and scale with ease on both Windows and Linux-based environments. To incorporate real time communication, WebApps should interact directly with WebRTC.  
 
 #### `Progressive Web App (PWA)` 
-A progressive web application is a type of application software delivered through the web, built using common web technologies including HTML, CSS and JavaScript.
+A progressive web application is a type of application software delivered through the web, built using common web technologies including HTML, CSS and JavaScript. To incorporate real time communication, Progressive Web Apps should interact directly with WebRTC.  
 
 #### `Chrome/Anaheim` 
 Google Chrome is a cross-platform web browser developed by Google. It was first released in 2008 for Microsoft Windows, and was later ported to Linux, macOS, iOS, and Android where it is the default browser built into the OS.
