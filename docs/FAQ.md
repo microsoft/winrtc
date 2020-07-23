@@ -29,14 +29,14 @@ Mixed Reality Toolkit (MRTK) provides a set of components and features to accele
 #### [`.Net`](https://dotnet.microsoft.com/)
 .Net is a free, cross-platform, open source developer platform for building many different types of applications. With .NET, you can use multiple languages, editors, and libraries to build for web, mobile, desktop, games, and IoT. When incorporating WinRTC, developers have the option to either use the XAML control or go directly to the WinRTC component.  
 
-#### [`React Native for Windows`](https://microsoft.github.io/react-native-windows/) 
+#### [`React Native for Windows (RN4W)`](https://microsoft.github.io/react-native-windows/) 
 React Native is an open-source mobile application framework created by Facebook. React Native for Windows brings React Native support for the Windows 10 SDK. With this, you can use JavaScript to build native Windows apps for all devices supported by Windows 10 including PCs, tablets, 2-in-1s, Xbox, Mixed reality devices, etc. When incorporating WinRTC with React Native, use the XAML control on top of the WinRTC for the best WinRTC experience. 
 
-#### [`Universal Windows Platform (UWP)`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#uwp)
-This platform provides a common type system, APIs, and application model for all devices that run Windows 10. UWP applications can be native or managed. When incorporating WinRTC, they have the option to either include a XAML control, or go directly to using WinRTC, or even skip both and go straight to the WebRTC layer.
+#### [`Universal Windows Platform (UWP) App`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#uwp)
+UWP is the platform provides a common type system, APIs, and application model for all devices that run Windows 10. UWP applications can be native or managed. When incorporating WinRTC, they have the option to either include a XAML control, or go directly to using WinRTC, or even skip both and go straight to the WebRTC layer.
 
-#### [`Win32 app`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#win32) 
-This is the original platform for native C/C++ Windows applications that require direct access to Windows and hardware. This makes the Win32 API the platform of choice for applications that need the highest level of performance and direct access to system hardware. 
+#### [`Win32 App`](https://docs.microsoft.com/en-us/windows/apps/desktop/choose-your-platform#win32) 
+Win32 is the original platform for native C/C++ Windows applications that require direct access to Windows and hardware. This makes the Win32 API the platform of choice for applications that need the highest level of performance and direct access to system hardware. 
 
 ### Web Developer Platform
 
