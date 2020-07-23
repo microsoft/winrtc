@@ -49,6 +49,8 @@ call :copyFiles c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
 call :copyFiles c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
 call :copyFiles c:\webrtc\src\stats\*.h ..\include\stats\
 call :copyFiles c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
+call :copyFiles c:\webrtc\src\third_party\abseil-cpp\absl\*.h ..\include\absl\
+call :copyFiles c:\webrtc\src\third_party\libyuv\include\*.h ..\include\
 call :copyFiles c:\webrtc\src\video\*.h ..\include\video\
 call :copyFiles c:\webrtc\src\common_types.h ..\include\
 
