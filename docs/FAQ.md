@@ -11,7 +11,7 @@ Let’s say Alice wants to talk to Bob. One possible way for them to coordinate 
 WinRTC brings the beauty of real time communication outside of the web and into the windows native development platform. Built upon the pre-existing WebRTC architecture, WinRTC is Microsoft's open-source software which enables real time communication for native windows applications. It helps to maximize efficiency for developers by having a lot less code, a lot less integration pieces to deal with, and a lot less packages to install.
 	
 ## What are our guiding principles for building WinRTC?  
-Our focus lies on enabling compatibility and key interoperability for our developers so that they are not only able to call any web native APIs, but also be aligned with the community's standards and with the larger WebRTC code base. We also want to ensure that we contribute back the community standard. 
+Our focus lies on enabling compatibility and key interoperability for our developers so that they are not only able to call any web native API, but also be aligned with the community's standards and with the larger WebRTC code base. We also want to ensure that we contribute back the community standard. 
 
 ## What is the architecture of WinRTC?
 
