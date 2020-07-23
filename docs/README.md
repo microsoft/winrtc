@@ -9,11 +9,7 @@ The overall architecture looks something like this:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-You will notice two distinct layers.
-
-    1. Browser developers will be interested in the WebRTC C++ API and the capture/render hooks at their disposal.
-
-    2. Web App developers will be interested in the Web API.
+You will notice the different scenarios in which WinRTC is used. For deeper look at our architecture, check out the FAQ!
 
 ## Installing and running WinRTC
 
