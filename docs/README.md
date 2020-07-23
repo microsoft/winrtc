@@ -19,7 +19,7 @@ As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get sta
 
 These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. 
 
-#### Wrappers for WinRT
+#### Wrappers for WinRTC
 
 The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edits/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
 
