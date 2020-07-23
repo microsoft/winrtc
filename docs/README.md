@@ -5,11 +5,15 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 #### WinRTC Architecture 
 
-This diagram showcases the different layers used to build WinRTC, as well as its capapbilities. Check out our FAQ for a more in-depth view!
+The overall architecture looks something like this:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-[Installation](#installing-and-running-winrtc)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [FAQ](#faq)   |   [Contributing to WinRTC](#contributing)   |   [Code of Conduct](#code-of-conduct)
+You will notice two distinct layers.
+
+    1. Browser developers will be interested in the WebRTC C++ API and the capture/render hooks at their disposal.
+
+    2. Web App developers will be interested in the Web API.
 
 ## Installing and running WinRTC
 
