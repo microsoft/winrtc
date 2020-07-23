@@ -3,13 +3,17 @@
 ### What is WinRTC? 
 The WinRTC project aims to host everything needed to build apps with interoperable real time communications for windows. It brings the power of WebRTC to Windows apps written in C#, C++ and VB. With WinRTC, native Windows apps can have real time communications with web browsers via WebRTC.
 
+#### WinRTC Architecture 
+
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
+
+This diagram showcases the different layers used to build WinRTC, as well as its capapbilities. Check out our FAQ for a more in-depth view!
 
 [Installation](#installing-and-running-winrtc)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [FAQ](#faq)   |   [Contributing to WinRTC](#contributing)   |   [Code of Conduct](#code-of-conduct)
 
 ## Installing and running WinRTC
 
-### Patching WebRTC M84
+#### Patching WebRTC M84
 
 As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
 
@@ -24,7 +28,9 @@ The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edi
 
 A big goal for us this month was to improve the hardware accelerated capabilities for audio and video capture, rendering, encoders and decoders in WinRTC.  
 
-We'd like to thank everyone who filed a bug, gave feedback or made a pull-request. The WinRTC team is extremely grateful to have the support of an amazing active community.
+We'd like to thank everyone who filed a bug, gave feedback, or made a pull-request. The WinRTC team is extremely grateful to have the support of an amazing active community.
+
+
 
 - Added port WebRTC-UWP H264 Encoder & Decoder over WinRTC
 - Added port WebRTC-UWP supporting Camera Profiles over WinRTC
