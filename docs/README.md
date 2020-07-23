@@ -9,7 +9,7 @@ The overall architecture looks something like this:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/docs/FAQ.md) page. 
+WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page. 
 
 ## Installing and running WinRTC
 
@@ -47,7 +47,7 @@ We're in the midst of building our road map to showcase which features we'll be 
 
 ## FAQ
 
-Check out our [frequently asked questions](https://github.com/microsoft/winrtc/docs/FAQ.md) page which we will update periodically.
+Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page which we will update periodically.
 
 Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
 
