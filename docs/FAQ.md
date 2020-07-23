@@ -19,7 +19,7 @@ The overall architecture looks something like this:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
-WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. Since the entire infrastructure of WinRTC is build atop the WebRTC foundation, our team works hard to ensure that what we are building aligns with the larger WebRTC community's standards. 
+WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. Since the entire infrastructure of WinRTC is build on top of the WebRTC foundation, our team works hard to ensure that what we are building aligns with the larger WebRTC community's standards. 
 
 ### Windows Native Development Platform
 
