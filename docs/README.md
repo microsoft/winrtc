@@ -5,9 +5,9 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 #### WinRTC Architecture 
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
-
 This diagram showcases the different layers used to build WinRTC, as well as its capapbilities. Check out our FAQ for a more in-depth view!
+
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
 
 [Installation](#installing-and-running-winrtc)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [FAQ](#faq)   |   [Contributing to WinRTC](#contributing)   |   [Code of Conduct](#code-of-conduct)
 
