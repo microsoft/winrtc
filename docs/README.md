@@ -15,7 +15,7 @@ WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applic
 
 #### Patching WebRTC M84
 
-As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
+As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](../patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
 
 These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. 
 
