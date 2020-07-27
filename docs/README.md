@@ -7,7 +7,7 @@ The WinRTC project aims to host everything needed to build apps with interoperab
 
 The overall architecture looks something like this:
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture.png">
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page. 
 
@@ -21,7 +21,7 @@ These patches are being contributed back. Some of these patches were already mer
 
 #### Wrappers for WinRTC
 
-The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edits/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
+The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/master/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
 
 ## What's New
 ### July 2020 Update
@@ -59,7 +59,7 @@ File a [new issue!](https://github.com/microsoft/winrtc/issues/new/choose) Tell 
 trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app.  Bonus
 points if there's a gist or existing repo we can look at with you.
 
-Read more about the [contribution guide here](https://github.com/microsoft/winrtc/blob/documentation-edits/CONTRIBUTING.md).
+Read more about the [contribution guide here](https://github.com/microsoft/winrtc/blob/master/docs/CONTRIBUTING.md).
 
 ### License Info
 

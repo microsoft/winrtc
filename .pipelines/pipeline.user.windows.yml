@@ -10,8 +10,13 @@ environment:
 
 version:
   name: 'WinRTC'
-  major: 1
+  major: 84
   minor: 0
+  system: 'patch'
+  exclude_commit: true
+
+signing_options:
+  profile: 'external_distribution'
 
 restore:
   commands:
@@ -32,3 +37,14 @@ build:
           to: 'out'
           include: 
             - '**/*'
+
+package:
+  commands:
+    - !!buildcommand
+      name: 'Create packages'
+      command: '.pipelines\package.cmd'
+      artifacts:
+        - from: 'NuSpecs'
+          to: 'out'
+          include:
+            - '*.nupkg'

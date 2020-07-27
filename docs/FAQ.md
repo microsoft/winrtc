@@ -17,7 +17,7 @@ Our focus lies on enabling compatibility and key interoperability for our develo
 
 The overall architecture looks something like this:
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/documentation-edits/doc/images/WinRTC_Architecture.png">
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture.png">
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. Since the entire infrastructure of WinRTC is build on top of the WebRTC foundation, our team works hard to ensure that what we are building aligns with the larger WebRTC community's standards. 
 
@@ -49,4 +49,4 @@ A progressive web application is a type of application software delivered throug
 #### `Chrome/Anaheim` 
 Google Chrome is a cross-platform web browser developed by Google. It was first released in 2008 for Microsoft Windows, and was later ported to Linux, macOS, iOS, and Android where it is the default browser built into the OS.
 
-## I don't see my question here! [Create an issue to ask a question or start a discussion](https://github.com/microsoft/ProjectReunion/issues/new/choose).
+## I don't see my question here! [Create an issue to ask a question or start a discussion](https://github.com/microsoft/winrtc/issues/new/choose).
