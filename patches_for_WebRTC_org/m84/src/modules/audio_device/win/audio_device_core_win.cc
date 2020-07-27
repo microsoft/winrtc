@@ -565,7 +565,6 @@ struct AudioDeviceHelper : public DeviceHelper<DEVICE_CLASS> {
     if (_hThread == nullptr) {
       RTC_LOG(LS_VERBOSE)
           << "no rendering stream is active => close down WASAPI only";
-      _transportInitialized = false;
       _transporting = false;
       return 0;
     }
@@ -580,7 +579,6 @@ struct AudioDeviceHelper : public DeviceHelper<DEVICE_CLASS> {
       RTC_LOG(LS_ERROR) << "failed to close down webrtc_core_audio_thread";
       CloseHandle(_hThread);
       _hThread = nullptr;
-      _transportInitialized = false;
       _transporting = false;
       return -1;
     }
@@ -593,7 +591,6 @@ struct AudioDeviceHelper : public DeviceHelper<DEVICE_CLASS> {
     // instance.
     ResetEvent(_hShutdownEvent);
 
-    _transportInitialized = false;
     _transporting = false;
 
     CloseHandle(_hThread);
