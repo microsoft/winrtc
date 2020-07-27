@@ -71,7 +71,6 @@ const size_t MAX_CORE_SPEAKER_VOLUME = 100;
 // ----------------------------------------------------------------------------
 
 void _TraceCOMError(HRESULT hr) {
-  wchar_t buf[MAXERRORLENGTH];
   wchar_t errorText[MAXERRORLENGTH];
 
   const DWORD dwFlags =
@@ -82,19 +81,18 @@ void _TraceCOMError(HRESULT hr) {
   // All error message in English by default.
   DWORD messageLength = ::FormatMessageW(dwFlags, 0, hr, dwLangID, errorText,
                                          MAXERRORLENGTH, nullptr);
-
   assert(messageLength <= MAXERRORLENGTH);
-
-  // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
-  for (; messageLength && ::isspace(errorText[messageLength - 1]);
-       --messageLength) {
-    errorText[messageLength - 1] = '\0';
+  if (messageLength > 0) {
+      // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
+      for (; messageLength && ::isspace(errorText[messageLength - 1]);
+           --messageLength) {
+        errorText[messageLength - 1] = '\0';
+      }
+      RTC_LOG(LS_ERROR) << "Core Audio method failed (hr=" << hr
+                        << "): " << rtc::ToUtf8(errorText);
+  } else {
+    RTC_LOG(LS_ERROR) << "Core Audio method failed (hr=" << hr << ")";
   }
-
-  RTC_LOG(LS_ERROR) << "Core Audio method failed (hr=" << hr << ")";
-  StringCchPrintfW(buf, MAXERRORLENGTH, L"Error details: ");
-  StringCchCatW(buf, MAXERRORLENGTH, errorText);
-  RTC_LOG(LS_ERROR) << rtc::ToUtf8(buf);
 }
 
 struct CCompletionDelegate
