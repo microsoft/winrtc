@@ -15,13 +15,13 @@ WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applic
 
 #### Patching WebRTC M84
 
-As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
+As is, the WebRTC code base has a Win32 port that doesn't build for UWP. Get started with building WebRTC for Windows with the patches available in this repo. We recommend applying the [M84 patch](https://github.com/microsoft/winrtc/tree/master/patches_for_WebRTC_org/m84), which has the most recent security updates and features. 
 
 These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. 
 
 #### Wrappers for WinRTC
 
-The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/documentation-edits/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
+The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/master/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
 
 ## What's New
 ### July 2020 Update
@@ -59,7 +59,7 @@ File a [new issue!](https://github.com/microsoft/winrtc/issues/new/choose) Tell 
 trying to solve, how you've tried to solve it so far, and what would be the ideal solution for your app.  Bonus
 points if there's a gist or existing repo we can look at with you.
 
-Read more about the [contribution guide here](https://github.com/microsoft/winrtc/blob/documentation-edits/CONTRIBUTING.md).
+Read more about the [contribution guide here](https://github.com/microsoft/winrtc/blob/master/docs/CONTRIBUTING.md).
 
 ### License Info
 
