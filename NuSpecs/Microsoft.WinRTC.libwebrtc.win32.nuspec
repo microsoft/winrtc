@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.WinRTC.libwebrtc.win32</id>
+        <version>84.0.3-alpha</version>
+        <authors>Microsoft</authors>
+        <owners>Microsoft</owners>
+        <projectUrl>http://github.com/microsoft/winrtc</projectUrl>
+        <license type="file">license.txt</license>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <releaseNotes>Upgrading WinRTC with the WebRTC changes up to version m84. Bringing the Media Foundation based H264 encoder and decoder from the WebRTC-UWP project.</releaseNotes>
+        <description>This package contains a WebRTC static library and the header files to be used to build an UWP native app or component.</description>
+        <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+        <tags>webrtc uwp windows native rtc real time communication</tags>
+        <dependencies>
+	    <group targetFramework="native" />
+        </dependencies>
+    </metadata>
+
+    <files>
+        <file src="license.txt" />
+        <file src="..\output\msvc\win32\Release\x64\obj\webrtc.lib" target="lib\native\Release\x64\v142" />
+        <file src="..\output\msvc\win32\Release\arm64\obj\webrtc.lib" target="lib\native\Release\arm64\v142" />
+        <file src="..\output\msvc\win32\Release\x86\obj\webrtc.lib" target="lib\native\Release\x86\v142" />
+        <file src="..\include\**\*.h" target="build\native\include" />
+        <file src="Microsoft.WinRTC.libwebrtc.win32.props" target="build\native" />
+    </files>
+</package>
+

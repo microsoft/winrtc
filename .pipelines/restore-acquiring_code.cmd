@@ -18,7 +18,7 @@ if errorlevel 1 goto :error
 curl -o vs_enterprise.exe -L "https://aka.ms/vs/16/release/vs_enterprise.exe"
 if errorlevel 1 goto :error
 
-call C:\Downloads\vs_enterprise.exe modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --add Microsoft.VisualStudio.Component.VC.ATLMFC;includeRecommended --quiet --wait
+call C:\Downloads\vs_enterprise.exe modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --add Microsoft.VisualStudio.Component.VC.ATLMFC;includeRecommended --add Microsoft.VisualStudio.Component.VC.MFC.ARM64;includeRecommended --add Microsoft.VisualStudio.Component.VC.Tools.ARM64;includeRecommended --quiet --wait
 if errorlevel 1 goto :error
 
 echo.
