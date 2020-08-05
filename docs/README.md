@@ -71,6 +71,12 @@ Read more about the [contribution guide here](https://github.com/microsoft/winrt
 
 Most contributions require you to agree to a [Contributor License Agreement (CLA)][oss-CLA] declaring that you have the right to, and actually do, grant us the rights to use your contribution.
 
+## Feedback
+
+Did you find this page helpful? [Let us know by providing your feedback](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR-tCZConOl1DsmA7Z5sVzcpUQTNTSkRaWEMxVFJVWDdQWUpSOUxCRVJNVC4u). 
+
+You can also [file an issue](https://github.com/microsoft/winrtc/issues/new/choose) to report a bug or propose a new feature. 
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct][oss-conduct-code].
