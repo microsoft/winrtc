@@ -1,8 +1,6 @@
 # Patching WebRTC for Windows
 
-This document will walk you through the steps required for getting the WebRTC code base, patching it and building it for UWP.
-
-These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet.
+This document will walk you through the steps required for getting the WebRTC code base, patching it and building it for UWP. These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet.
 
 ## Prerequisites
 
