@@ -10,7 +10,7 @@ This document will walk you through the steps required for getting the WebRTC co
 - At least 15GB of disk space. 
 - SSD drive formatted with NTFS. 
 
-#### External Applications 
+#### External applications
 - [Microsoft Visual Studio 2019 16.6.2](http://visualstudio.com). 
 - Command Prompt ([Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?activetab=pivot:overviewtab) is recommended, but cmd.exe works as well).
 
