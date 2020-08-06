@@ -1,23 +1,24 @@
-# Patching WebRTC build for modern Windows
+# Patching WebRTC for Windows
 
-This document will walk you through the steps required for getting WebRTC code base, patching it and build it for UWP.
+This document will walk you through the steps required for getting the WebRTC code base, patching it and building it for UWP. These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet.
 
-These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contributing changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible.
+## Prerequisites
 
-Building WebRTC from scratch is extremely powerful, but it is a lot of work. If you are looking for shipping a limited set of codecs or greater control of the binary size, building from scratch is the way to go. However, we believe that most developers would be ok with a more off of shelf solution.
+#### Machine requirements 
+- Windows 10 (build 18362) or later.
+- At least 8GB of RAM (16GB of RAM is recommended). 
+- At least 15GB of disk space. 
+- SSD drive formatted with NTFS. 
 
-We're also investigating the feasibility of having NuGet packages of a patched WebRTC. Building against WebRTC requires a considerable amount of header files from multiple different repos. Besides that, there is the problem of the sheer size of the binaries produced. Stay tuned because this repo will be updated if/when a NuGet package is available.
+#### External applications
+- [Microsoft Visual Studio 2019 16.6.2](http://visualstudio.com). 
+- Command Prompt ([Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?activetab=pivot:overviewtab) is recommended, but cmd.exe works as well).
 
-# Prerequisites
+In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 
-To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 18362 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **15GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
-
-You'll also need **Microsoft Visual Studio 2019**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 If you want to build for ARM/ARM64, also select the C++ MFC and ATL v142 build tools and **C++ Universal Windows Platform support for v142 build tools** for the corresponding architecture.
 
 When installed by Visual Studio, the Windows SDK doesn't have the **SDK Debugging Tools** installed. Please go to **Control Panel** → **Programs** → **Programs and Features** → Select the most recent **Windows Software Development Kit** → **Change** → **Change** → Select **Debugging Tools For Windows** → **Change**.
-
-You'll be running commands in the console. You can use the good old cmd.exe for that, but we do recommend using the [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701?activetab=pivot:reviewstab).
 
 # Acquiring WebRTC code base
 
