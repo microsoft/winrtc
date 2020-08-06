@@ -1,24 +1,26 @@
-# Patching WebRTC build for modern Windows
+# Patching WebRTC for Windows
 
-This document will walk you through the steps required for getting WebRTC code base, patching it and build it for UWP.
+This document will walk you through the steps required for getting the WebRTC code base, patching it and building it for UWP.
 
-These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet. Contributing changes back take time. We want you to be able to build Windows apps with real time communications as soon as possible.
+These patches are being contributed back. Some of these patches were already merged into their original repos, but didn't rolled over WebRTC yet.
 
-Building WebRTC from scratch is extremely powerful, but it is a lot of work. If you are looking for shipping a limited set of codecs or greater control of the binary size, building from scratch is the way to go. However, we believe that most developers would be ok with a more off of shelf solution.
+## Prerequisites
 
-We're also investigating the feasibility of having NuGet packages of a patched WebRTC. Building against WebRTC requires a considerable amount of header files from multiple different repos. Besides that, there is the problem of the sheer size of the binaries produced. Stay tuned because this repo will be updated if/when a NuGet package is available.
+#### Machine requirements 
+- Windows 10 (build 19041) or later.
+- At least 8GB of RAM (16GB of RAM is recommended). 
+- At least 15GB of disk space. 
+- SSD drive formatted with NTFS. 
 
-# Prerequisites
+#### External Applications 
+- [Microsoft Visual Studio 2019 16.6.2](http://visualstudio.com). 
+- Command Prompt ([Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?activetab=pivot:overviewtab) is recommended, but cmd.exe works as well).
 
-To build WebRTC rapidly requires a beefy machine. Make sure your build rig is a **64-bit Intel** based machine running **Windows 10 build 19041 or more recent**. It builds on machines with 8GB of RAM, but at least **16GB of RAM** is recommended. It also requires a seriously amount of disk space. Make sure you have at least **15GB available**. Finally, make sure you **SSD** drive is formatted with **NTFS**.
-
-You'll also need **Microsoft Visual Studio 2019 16.6.2**. Download your favorite flavor of Visual Studio 2019 from [http://visualstudio.com](http://visualstudio.com). In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
+In the **Visual Studio Installer** app, please verify if Visual Studio 2019 has the **Desktop development with C++** and **Universal Windows Platform development** workloads installed. Switch to the **Individual components** tab. Make sure **C++ MFC for latest v142 build tools (x86 & x64)** and **C++ ATL for latest v142 build tools (x86 & x64)** are selected.
 
 If you want to build for ARM/ARM64, also select the C++ MFC and ATL for latest v142 build tools and **C++ Universal Windows Platform support for v142 build tools** for the corresponding architecture.
 
 When installed by Visual Studio, the Windows SDK doesn't have the **SDK Debugging Tools** installed. Please go to **Control Panel** → **Programs** → **Programs and Features** → Select the most recent **Windows Software Development Kit** → **Change** → **Change** → Select **Debugging Tools For Windows** → **Change**.
-
-You'll be running commands in the console. You can use the good old cmd.exe for that, but we do recommend using the [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701?activetab=pivot:reviewstab).
 
 # Opening the developer command prompt
 
@@ -26,7 +28,7 @@ You'll need a command prompt configured for calling Visual Studio tools. The fol
 
 1. Using the shortcut in the start menu
 
-You can open the shortcut placed in the start menu by Visual Studio installer. You'll find a it clicking on the **Start Menu** → **Visual Studio 2019** → **x64 Native Tools Command Prompt for VS 2019**
+Click on **Start Menu** → **Visual Studio 2019** → **x64 Native Tools Command Prompt for VS 2019**
 
 or
 
@@ -95,20 +97,20 @@ Tell to the gclient tool to initialize your local copy of the repos.
 gclient
 ```
 
-Request the tools to fetch the WebRTC code base. The following command will take time. Past experience shows that it might take around 1 hour an 10 minutes. 
+Request the tools to fetch the WebRTC code base. The following command will take time. Past experience shows that it might take around 1 hour and 10 minutes. 
 
 ```shell
 fetch --nohooks webrtc
 ````
 
-Change to the branch-heads/4147 branch. This is the commit that the UWP patches (see below) are based on. You can use a different commit but the patches might not apply correctly.
+Change to the branch-heads/4147 branch. This is the commit that the UWP patches (see below) are based on. 
 
 ```shell
 cd src
 git checkout branch-heads/4147
 ```
 
-Instruct the tools to bring the bits from all the sub repositories to your dev box. This will take awhile.
+Instruct the tools to bring the bits from all the sub repositories to your dev box. This may take a while.
 
 ```shell
 gclient sync -D -r branch-heads/4147
@@ -116,25 +118,23 @@ gclient sync -D -r branch-heads/4147
 
 ## Applying the patches
 
-As is, WebRTC doesn't build for modern Windows (UWP). Probably you already know that and it is why you're reading this. So, now is time to patch WebRTC for building for UWP.
-
-There is a batch file named **patchWebRTCM84.cmd** in the folder **patches_for_WebRTC_org\m84** of the **WinRTC** repo for patching WebRTC. The patchWebRTCM84.cmd batch file needs to know where is the WebRTC code base to be patched. The environment variable **WEBRTCM84_ROOT** should contain the path for the WebRTC code base you've just downloaded.
+The [patchWebRTCM84.cmd](https://github.com/microsoft/winrtc/blob/master/patches_for_WebRTC_org/m84/patchWebRTCM84.cmd) batch file needs to locate the WebRTC code base in order to be patched. The environment variable **WEBRTCM84_ROOT** should contain the path for the WebRTC code base you've just downloaded.
 
 ```shell
 set WEBRTCM84_ROOT=c:\webrtc\src
 ```
 
-Now, you just need to run the batch file that will patch all the necessary repos the form the WebRTC code base.
+Now, you just need to run the batch file that will patch all the necessary repos that form the WebRTC code base.
 
 ```shell
 c:\WinRTC\patches_for_WebRTC_org\m84\patchWebRTCM84.cmd
 ```
 
-# Setting up the and building
+# Setting up and building
 
 ## Setting up
 
-WebRTC is a extensive project and not all of its modules are required for producing an UWP app with real time communications capabilities. Because of that, some parts of the WebRTC code base that do not build for UWP were not patched by the patchWebRTCM84.cmd script. You don't need to worry, the following ninja command excludes the unnecessary modules and prepares to build the drop for UWP.
+WebRTC is an extensive project and not all of its modules are required for producing a UWP app with real time communications capabilities. Because of that, some parts of the WebRTC code base that do not build for UWP were not patched by the patchWebRTCM84.cmd script. As such, the following ninja command excludes the unnecessary modules and prepares to build for UWP.
 
 ```shell
 gn gen --ide=vs2019 out\msvc\uwp\Release\x64 --filters=//:webrtc "--args=is_debug=false use_lld=false is_clang=false rtc_include_tests=false rtc_build_tools=false rtc_win_video_capture_winrt=true target_os=\"winuwp\" rtc_build_examples=false rtc_win_use_mf_h264=true enable_libaom=false rtc_enable_protobuf=false"
@@ -150,11 +150,11 @@ Please note that not all settings are supported in a UWP build.
 
 ## Building
 
-One you have the project set up, you can choose between building it inside Visual Studio or directly with the command line.
+Now that the project is set up, you can choose between building it inside Visual Studio or directly with the command line.
 
 ### With Visual Studio 2019
 
-Assuming that your terminal has Visual Studio in the path, you can open the generated Visual Studio solution with the following command:
+Open the generated Visual Studio solution with the following command:
 
 ```shell
 devenv out\msvc\uwp\Release\x64\all.sln
@@ -162,8 +162,7 @@ devenv out\msvc\uwp\Release\x64\all.sln
 
 Keep in mind that opening the all.sln solution from the Start Menu will render to different results. Calling Visual Studio from the current command prompt will seed Visual Studio with the environment variables defined earlier (DEPOT_TOOLS_WIN_TOOLCHAIN, GYP_MSVS_VERSION and PATH) and needed by VS2019 to build the solution from the IDE. 
 
-To build on Visual Studio, make sure you can see the Solution Explorer window (**View** → **Solution Explorer**), then right-click on the webrtc project (it should be on the bottom of the window), and then click on **Select as Startup Project**.
-Now is just build the solution with **Build** → **Build Solution**.
+To build on Visual Studio, make sure you can see the Solution Explorer window (**View** → **Solution Explorer**), then right-click on the webrtc project (it should be on the bottom of the window), and then click on **Select as Startup Project**. Finally, complete the build with **Build** → **Build Solution**.
 
 ### With command line
 
