@@ -227,4 +227,4 @@ Still on the **Input** tab, click on **Ignore Specific Default Libraries** and a
 
 # Victory
 
-Click on **OK** and you should be good to use WebRTC APIs on your UWP app! :)
+Click on **OK** and you should be good to use WebRTC APIs on your UWP app! 
