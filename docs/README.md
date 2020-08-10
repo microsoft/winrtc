@@ -1,4 +1,12 @@
-# Overview
+# Welcome to the WinRTC repo!
+
+This repository contains the following sections:
+
+[Getting Started](#overview)   |   [Resources](#resources)   |   [FAQ](#faq)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [Contribution Guidelines](#contributing)   |   [Feedback Form](#feedback)   |   [Code of Conduct](#code-of-conduct)
+
+---
+
+## Overview 
 
 ### What is WinRTC? 
 The WinRTC project aims to host everything needed to build apps with interoperable real time communications for windows. It brings the power of WebRTC to Windows apps written in C#, C++ and VB. With WinRTC, native Windows apps can have real time communications with web browsers via WebRTC.
@@ -17,6 +25,8 @@ Session Breakdown:
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page. 
 
+---
+
 ## Installing and running WinRTC
 
 #### Patching WebRTC M84
@@ -28,6 +38,28 @@ These patches are being contributed back. Some of these patches were already mer
 #### Wrappers for WinRTC
 
 The [`WebRtcWrapper`](https://github.com/microsoft/winrtc/tree/master/WebRtcWrapper) folder contains an alpha version of WinRT wrappers for WebRTC. With these wrappers you'll be able to consume WebRTC functionality from any WinRT projection. Stay tuned for NuGet packages coming soon for these wrappers! 
+
+---
+
+## Resources
+
+For more information about WinRTC, you may find some of these resources useful and interesting:
+
+* Overview and live walkthrough of WinRTC: [Build 2020 WinRTC Session](https://aka.ms/m365sk126)
+* Answering common questions from our community: [Expert Q&A: WinRTC Open Source WebRTC Library](https://www.youtube.com/watch?v=AsjgLAtzUT4)
+* Intuitive explanation of real time communication: [Quick introduction to WebRTC](https://www.youtube.com/watch?v=RI5fGsEvDnI)
+* Extensive blog about WebRTC fundamentals: [HTML5 Rocks WebRTC Tutorial](https://www.html5rocks.com/en/tutorials/webrtc/basics/)
+* Collection of WebRTC tutorials: [Kranky Geek WebRTC video series](https://www.bing.com/videos/search?q=kranky+geek+winrtc&qpvt=kranky+geek+winrtc&FORM=VDRE)
+
+---
+
+## FAQ
+
+Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page which we will update periodically.
+
+Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
+
+---
 
 ## What's New
 ### July 2020 Update
@@ -45,17 +77,13 @@ In our most recent update, we have:
 For our next release, we are proactively working on:
 - Creating NuGet packages for WinRTC wrappers
 
+---
+
 ## Road Map
 
 _Coming soon!_
 
 We're in the midst of building our road map to showcase which features we'll be working on in the near-future. [You can help by filing issues for features you'd like to see!](https://github.com/microsoft/winrtc/issues/new/choose) For example, you can propose an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
-
-## FAQ
-
-Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page which we will update periodically.
-
-Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
 
 ## Contributing
 
@@ -71,11 +99,15 @@ Read more about the [contribution guide here](https://github.com/microsoft/winrt
 
 Most contributions require you to agree to a [Contributor License Agreement (CLA)][oss-CLA] declaring that you have the right to, and actually do, grant us the rights to use your contribution.
 
+---
+
 ## Feedback
 
 Did you find this page helpful? [Let us know by providing your feedback](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR-tCZConOl1DsmA7Z5sVzcpUQTNTSkRaWEMxVFJVWDdQWUpSOUxCRVJNVC4u). 
 
 You can also [file an issue](https://github.com/microsoft/winrtc/issues/new/choose) to report a bug or propose a new feature. 
+
+---
 
 ## Code of Conduct
 
