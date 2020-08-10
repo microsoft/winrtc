@@ -23,7 +23,7 @@ Session Breakdown:
 
 <img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture.png">
 
-WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page. 
+WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page. 
 
 ---
 
@@ -84,8 +84,6 @@ For our next release, we are proactively working on:
 _Coming soon!_
 
 We're in the midst of building our road map to showcase which features we'll be working on in the near-future. [You can help by filing issues for features you'd like to see!](https://github.com/microsoft/winrtc/issues/new/choose) For example, you can propose an idea for a new API. It's fine if you don't have all the details: you can start with a summary and rationale.
-
----
 
 ## Contributing
 
