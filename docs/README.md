@@ -2,7 +2,7 @@
 
 This repository contains the following sections:
 
-[Getting Started](#overview)   |   [Resources](#resources)   |   [FAQ](#faq)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [Contribution Guidelines](#contributing)   |   [Feedback Form](#feedback)   |   [Code of Conduct](#code-of-conduct)
+[Getting Started](#overview)   |   [Resources](#resources)   |   [FAQ](#faq)   |   [What's New](#whats-new)   |   [Road Map](#road-map)   |   [Contribution Guidelines](#contributing)   |   [Feedback Form](#feedback)
 
 ---
 
