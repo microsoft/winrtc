@@ -21,7 +21,7 @@ Session Breakdown:
 
 #### WinRTC Architecture 
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture.png">
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/aisha-magsi-patch-1/docs/Architecture_Diagram.png">
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page. 
 
@@ -47,6 +47,7 @@ For more information about WinRTC, you may find some of these resources useful a
 
 * Overview and live walkthrough of WinRTC: [Build 2020 WinRTC Session](https://aka.ms/m365sk126)
 * Answering common questions from our community: [Expert Q&A: WinRTC Open Source WebRTC Library](https://www.youtube.com/watch?v=AsjgLAtzUT4)
+* The foundation of WinRTC: [Google's WebRTC project](https://webrtc.org/)
 * Intuitive explanation of real time communication: [Quick introduction to WebRTC](https://www.youtube.com/watch?v=RI5fGsEvDnI)
 * Extensive blog about WebRTC fundamentals: [HTML5 Rocks WebRTC Tutorial](https://www.html5rocks.com/en/tutorials/webrtc/basics/)
 * Collection of WebRTC tutorials: [Kranky Geek WebRTC video series](https://www.bing.com/videos/search?q=kranky+geek+winrtc&qpvt=kranky+geek+winrtc&FORM=VDRE)
@@ -55,7 +56,7 @@ For more information about WinRTC, you may find some of these resources useful a
 
 ## FAQ
 
-Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/documentation-edits/docs/FAQ.md) page which we will update periodically.
+Check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page which we will update periodically.
 
 Have an urgent question and can't find the answer? [Don't hesitate to ask!](https://github.com/microsoft/winrtc/issues/new/choose)
 
