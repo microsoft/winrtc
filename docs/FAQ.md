@@ -17,7 +17,7 @@ Our focus lies on enabling compatibility and key interoperability for our develo
 
 The overall architecture looks something like this:
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture.png">
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/aisha-magsi-patch-1/docs/Architecture_Diagram.png">
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. Since the entire infrastructure of WinRTC is build on top of the WebRTC foundation, our team works hard to ensure that what we are building aligns with the larger WebRTC community's standards. 
 
@@ -46,7 +46,7 @@ WebApps, provided under Azure App Service, are an HTTP-based service for hosting
 #### `Progressive Web App (PWA)` 
 A progressive web application is a type of application software delivered through the web, built using common web technologies including HTML, CSS and JavaScript. To incorporate real time communication, Progressive Web Apps should interact directly with WebRTC.  
 
-#### `Chrome/Anaheim` 
-Google Chrome is a cross-platform web browser developed by Google. It was first released in 2008 for Microsoft Windows, and was later ported to Linux, macOS, iOS, and Android where it is the default browser built into the OS.
+#### `Chrome/Microsoft Edge` 
+Google Chrome is a cross-platform web browser developed by Google. It was first released in 2008 for Microsoft Windows, and was later ported to Linux, macOS, iOS, and Android where it is the default browser built into the OS. Microsoft Edge is a cross-platform web browser developed by Microsoft. 
 
 ## I don't see my question here! [Create an issue to ask a question or start a discussion](https://github.com/microsoft/winrtc/issues/new/choose).
