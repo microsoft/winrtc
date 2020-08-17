@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
-        <id>Microsoft.WinRTC.libwebrtc</id>
+        <id>Microsoft.WinRTC.libwebrtc.uwp</id>
         <version>84.0.3-alpha</version>
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
@@ -20,8 +20,10 @@
     <files>
         <file src="license.txt" />
         <file src="..\output\msvc\uwp\Release\x64\obj\webrtc.lib" target="lib\native\Release\x64\v142" />
+        <file src="..\output\msvc\uwp\Release\arm64\obj\webrtc.lib" target="lib\native\Release\arm64\v142" />
+        <file src="..\output\msvc\uwp\Release\x86\obj\webrtc.lib" target="lib\native\Release\x86\v142" />
         <file src="..\include\**\*.h" target="build\native\include" />
-        <file src="Microsoft.WinRTC.libwebrtc.props" target="build\native" />
+        <file src="Microsoft.WinRTC.libwebrtc.uwp.props" target="build\native" />
     </files>
 </package>
 
