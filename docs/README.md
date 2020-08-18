@@ -21,7 +21,7 @@ Session Breakdown:
 
 #### WinRTC Architecture 
 
-<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture_Diagram_Color_Blind_Accessible.png">
+<img alt="WinRTC architecture" src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/WinRTC_Architecture_Diagram.png">
 
 WinRTC's compatibility extends to .Net and RN4W, as well as UWP and Win32 applications. For more insight into the architecture, check out our [frequently asked questions](https://github.com/microsoft/winrtc/blob/master/docs/FAQ.md) page. 
 
