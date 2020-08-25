@@ -1,0 +1,29 @@
+##How To Run The MyFirstWinRtc Sample App
+
+###Requirement for running the sample App.
+
+1. Visual Studio 2019 Version 16.6.2 or later.
+2. At least 8GB of RAM (16GB of RAM is recommended).
+3. At least 15GB of disk space.
+
+###Acquiring Winrtc and adding WebRtc Patches
+
+1. Acqiring the WinRtc. Goto to the [Winrtc GitHub Repo](https://github.com/microsoft/winrtc).
+
+2. Clone the Repo for winrtc, by clicking download zip or using command line
+```
+C:\> git clone https://github.com/microsoft/winrtc.git
+```
+3. Goto the [Patches for WebRTC](https://github.com/microsoft/winrtc/tree/master/patches_for_WebRTC_org/m84).
+Follow the steps to acqire WebRTC and add the Patches needed to build for UWP[Universal Windows Platform](https://docs.microsoft.com/en-us/windows/uwp/get-started/universal-application-platform-guide).
+
+
+###Runing the Video Conferencing Sample App
+
+After obtaing the WinRTC repo and adding the patches to WebRTC,
+
+1. Navigate to the WinRtc folder
+
+2. Click on 
+
+
