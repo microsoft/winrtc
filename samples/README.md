@@ -15,7 +15,7 @@
 C:\> git clone https://github.com/microsoft/winrtc.git
 ```
 3. Goto the [Patches for WebRTC](https://github.com/microsoft/winrtc/tree/master/patches_for_WebRTC_org/m84).
-Follow the steps to acqire WebRTC and add the Patches needed to build for UWP[Universal Windows Platform](https://docs.microsoft.com/en-us/windows/uwp/get-started/universal-application-platform-guide).
+Follow the steps to acqire WebRTC and add the Patches needed to build UWP ([Universal Windows Platform](https://docs.microsoft.com/en-us/windows/uwp/get-started/universal-application-platform-guide)).
 
 
 ### Runing the Sample App
@@ -42,13 +42,13 @@ Then an app window will pop up for MyFirstWinRtc.
 
 7. Acquire the number from the buttom of App page
  
- <img src="/docs/Roomcode.png"> 
+ <img src="/docs/roomNum.png"> 
 
 9. Goto [Appr.tc](https://appr.tc)
 
 10. Type in the number gotten from the MyFirstWinRtc App.
 
- <img src="/docs/Joinroom.png"> 
+ <img src="/docs/tempsnip.png"> 
 
 11. Then Click Join to establish a video call between the two devices.
 
