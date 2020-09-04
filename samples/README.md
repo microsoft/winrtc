@@ -28,7 +28,7 @@ After obtaing the WinRTC repo and adding the patches to WebRTC,
 4. Click on VideoConferencing.
 5. Right click on the VideoConferencing.sln, then click on open.  
 
-A visual studio window should appear on appear on the screen.
+A visual studio window should appear on the screen.
 In the solution Explorer tab on Visual Studio, there should be 2 projects in the VideoConferencing solution 
 
 <img src="/docs/sln.png"> 
@@ -50,7 +50,7 @@ Then an app window will pop up for MyFirstWinRtc.
 
  <img src="/docs/tempsnip.png"> 
 
-11. Then Click Join to establish a video call between the two devices.
+11. Then Click Join to establish a connection between the two devices for a video call.
 
 ---
 
