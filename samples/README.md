@@ -18,7 +18,7 @@ C:\> git clone https://github.com/microsoft/winrtc.git
 Follow the steps to acqire WebRTC and add the Patches needed to build for UWP[Universal Windows Platform](https://docs.microsoft.com/en-us/windows/uwp/get-started/universal-application-platform-guide).
 
 
-### Runing the Video Conferencing Sample App
+### Runing the Sample App
 
 After obtaing the WinRTC repo and adding the patches to WebRTC,
 
@@ -31,24 +31,24 @@ After obtaing the WinRTC repo and adding the patches to WebRTC,
 A visual studio window should appear on appear on the screen.
 In the solution Explorer tab on Visual Studio, there should be 2 projects in the VideoConferencing solution 
 
-<img src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/sln.png"> 
+<img src="/docs/sln.png"> 
 
 **Note: If you see an Alert about restoring the nugets, Click on Restore to install all required nugets**
 
-6. On the top of the Visual studio, Click on Local Machine. By clicking, A version of the MyFirstWinRtc UWP app will be deployed to your local machine.
-Then a window will pop up for MyFirstWinRtc.
+6. On the top of the Visual studio, Click on Local Machine. By clicking, a version of the MyFirstWinRtc UWP app will be deployed to your local machine.
+Then an app window will pop up for MyFirstWinRtc.
 
-<img src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/AddUser.png"> 
+<img src="/docs/AddUser.png"> 
 
-7. Acquire the number from the New App page
+7. Acquire the number from the buttom of App page
  
- <img src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/Roomcode.png"> 
+ <img src="/docs/Roomcode.png"> 
 
 9. Goto [Appr.tc](https://appr.tc)
 
 10. Type in the number gotten from the MyFirstWinRtc App.
 
-<img src="https://raw.githubusercontent.com/microsoft/winrtc/master/docs/Joinroom.png"> 
+ <img src="/docs/Joinroom.png"> 
 
 11. Then Click Join to establish a video call between the two devices.
 
@@ -56,7 +56,7 @@ Then a window will pop up for MyFirstWinRtc.
 
 ## FeedBack
 
-You can [file an issue](https://github.com/microsoft/winrtc/issues/new/choose) to report a bug. 
+Your feedback is important to us. Please [file an issue](https://github.com/microsoft/winrtc/issues/new/choose) to report a bug. 
 
 
 
