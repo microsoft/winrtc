@@ -23,6 +23,8 @@
 #include <wrl/implements.h>
 #include <wrl/wrappers/corewrappers.h>
 
+#include <memory>
+
 #include "modules/audio_device/audio_device_config.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
@@ -67,7 +69,7 @@ const size_t MIN_CORE_SPEAKER_VOLUME = 0;
 const size_t MAX_CORE_SPEAKER_VOLUME = 100;
 
 HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
-                              _In_ HANDLE event_completed_handle,
+                              _In_ std::shared_ptr<HANDLE> event_completed_handle_ptr,
                               _In_ DWORD timeout_ms) {
   HRESULT hr = S_OK;
   AsyncStatus async_status;
@@ -84,14 +86,14 @@ HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
   if (SUCCEEDED(hr)) {
     if (async_status == AsyncStatus::Started) {
       DWORD trigger_event =
-          ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE);
+          ::WaitForSingleObjectEx(*event_completed_handle_ptr, timeout_ms, FALSE);
       if (trigger_event == WAIT_OBJECT_0) {
         hr = S_OK;
       } else if (trigger_event == WAIT_TIMEOUT) {
         HRESULT hr2 = async_info->get_Status(&async_status);
         if (SUCCEEDED(hr2) && (async_status == AsyncStatus::Completed)) {
           // The async operation might be completed before the put_Completed
-          // callback triggering event_completed_handle have chance to be
+          // callback triggering event_completed_handle_ptr have chance to be
           // defined. In that case, the event timesout, but the async
           // operation might be successfully completed.
           RTC_LOG(LS_WARNING)

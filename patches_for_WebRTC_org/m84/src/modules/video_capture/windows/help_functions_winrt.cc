@@ -13,6 +13,8 @@
 #include <Windows.ApplicationModel.core.h>
 #include <Windows.ApplicationModel.h>
 
+#include <memory>
+
 #include "rtc_base/logging.h"
 
 using ::ABI::Windows::ApplicationModel::Core::ICoreApplication;
@@ -416,9 +418,10 @@ HRESULT CreateMediaCaptureInitializationSettings(
   return hr;
 }
 
-HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
-                              _In_ HANDLE event_completed_handle,
-                              _In_ DWORD timeout_ms) {
+HRESULT WaitForASyncWithEvent(
+    _In_ IAsyncInfo* async_info,
+    _In_ std::shared_ptr<HANDLE> event_completed_handle_ptr,
+    _In_ DWORD timeout_ms) {
   HRESULT hr = S_OK;
   AsyncStatus async_status;
 
@@ -433,15 +436,15 @@ HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
 
   if (SUCCEEDED(hr)) {
     if (async_status == AsyncStatus::Started) {
-      DWORD trigger_event =
-          ::WaitForSingleObjectEx(event_completed_handle, timeout_ms, FALSE);
+      DWORD trigger_event = ::WaitForSingleObjectEx(*event_completed_handle_ptr,
+                                                    timeout_ms, FALSE);
       if (trigger_event == WAIT_OBJECT_0) {
         hr = S_OK;
       } else if (trigger_event == WAIT_TIMEOUT) {
         HRESULT hr2 = async_info->get_Status(&async_status);
         if (SUCCEEDED(hr2) && (async_status == AsyncStatus::Completed)) {
           // The async operation might be completed before the put_Completed
-          // callback triggering event_completed_handle have chance to be
+          // callback triggering event_completed_handle_ptr have chance to be
           // defined. In that case, the event timesout, but the async
           // operation might be successfully completed.
           RTC_LOG(LS_WARNING)
@@ -480,7 +483,7 @@ HRESULT WaitForAsyncAction(
   HRESULT hr_async_error = S_OK;
   ComPtr<IAsyncAction> async_action(p_async_action);
   ComPtr<IAsyncInfo> async_info;
-  HANDLE event_completed_handle = NULL;
+  std::shared_ptr<HANDLE> event_completed_handle_ptr = NULL;
 
   APTTYPE apt_type;
   APTTYPEQUALIFIER apt_qualifier;
@@ -502,10 +505,19 @@ HRESULT WaitForAsyncAction(
   if (SUCCEEDED(hr)) {
     // Using raw HANDLE because WRL::Wrappers::Event doesn't always work across
     // threads and there is no agile option.
-    event_completed_handle =
+    HANDLE event_completed_handle =
         ::CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
                         WRITE_OWNER | EVENT_ALL_ACCESS);
-    hr = event_completed_handle ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    if (event_completed_handle) {
+      hr = S_OK;
+      event_completed_handle_ptr = std::shared_ptr<HANDLE>(
+          new HANDLE{event_completed_handle}, [](HANDLE* h) {
+            ::CloseHandle(*h);
+            delete h;
+          });
+    } else {
+      hr = HRESULT_FROM_WIN32(GetLastError());
+    }
   }
 
   if (SUCCEEDED(hr)) {
@@ -517,11 +529,11 @@ HRESULT WaitForAsyncAction(
   // Defines the callback that will signal the event to unblock and resume.
   if (SUCCEEDED(hr)) {
     hr = async_action->put_Completed(
-        Callback<IAsyncActionCompletedHandler>([event_completed_handle](
+        Callback<IAsyncActionCompletedHandler>([event_completed_handle_ptr](
                                                    IAsyncAction*,
                                                    AsyncStatus async_status)
                                                    -> HRESULT {
-          ::SetEvent(event_completed_handle);
+          ::SetEvent(*event_completed_handle_ptr);
 
           return async_status == AsyncStatus::Completed ? S_OK : E_ABORT;
         }).Get());
@@ -529,12 +541,8 @@ HRESULT WaitForAsyncAction(
 
   // Block and suspend thread until the async operation finishes or timeout.
   if (SUCCEEDED(hr)) {
-    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle,
+    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle_ptr,
                                timeout_ms);
-  }
-
-  if (event_completed_handle) {
-    ::CloseHandle(event_completed_handle);
   }
 
   // Checks if async operation completed successfully.
