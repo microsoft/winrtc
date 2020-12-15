@@ -33,24 +33,34 @@ In the solution Explorer tab on Visual Studio, there should be 2 projects in the
 
 <img src="/docs/sln.png"> 
 
-**Note: If you see an Alert about restoring the nugets, Click on Restore to install all required nugets**
+**Note: If you see an alert about restoring the nugets, click on restore to install all required nugets. Else, see instruction 6**
 
-6. On the top of the Visual studio, Click on Local Machine. By clicking, a version of the MyFirstWinRtc UWP app will be deployed to your local machine.
+6. To add the WinRTC NuGet, click on Tools on the Tool bar then navigate to NuGet Package Manager then click on Manage NuGet Package for Solution.
+
+<img src="/docs/adding_Nuget.png">
+
+**Note: Make sure to set the Package source to nuget.org**
+
+7. Click on "Browse". On the Search bar, type "Microsoft.WinRTC.libwebrtc.uwp.84.0.14370001", the click "install" to install the NuGet.
+
+<img src="/docs/install_Nuget.png">
+
+8. On the top of the Visual studio, Click on Local Machine. By clicking, a version of the MyFirstWinRtc UWP app will be deployed to your local machine.
 Then an app window will pop up for MyFirstWinRtc.
 
 <img src="/docs/AddUser.png"> 
 
-7. Acquire the number from the buttom of App page
+9. Acquire the number from the buttom of App page
  
  <img src="/docs/roomNum.png"> 
 
-9. Goto [Appr.tc](https://appr.tc)
+10. Goto [Appr.tc](https://appr.tc)
 
-10. Type in the number gotten from the MyFirstWinRtc App.
+11. Type in the number gotten from the MyFirstWinRtc App.
 
  <img src="/docs/tempsnip.png"> 
 
-11. Then Click Join to establish a connection between the two devices for a video call.
+12. Then Click Join to establish a connection between the two devices for a video call.
 
 ---
 
