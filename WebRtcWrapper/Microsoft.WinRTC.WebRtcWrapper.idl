@@ -58,6 +58,14 @@ enum SdpType
   Rollback,
 };
 
+enum DataState
+{
+  kConnecting,
+  kOpen,
+  kClosing,
+  kClosed
+};
+
 [default_interface]
 runtimeclass AudioDecoderFactory
 {
@@ -82,6 +90,7 @@ runtimeclass AudioTrack : MediaStreamTrack
 {
 };
 
+
 runtimeclass AudioTrackSink
 {
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.AudioTrackSinkOnData OnData;
@@ -93,6 +102,48 @@ runtimeclass CreateSessionDescriptionObserver
 
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserverOnSuccessDelegate OnSuccess;
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserverOnFailureDelegate OnFailure;
+};
+
+runtimeclass DataChannelInit
+{
+  Boolean Reliable;
+  Boolean Ordered {get; };
+  Int32 MaxRetransmitTime;
+  Int32 MaxRetransmits;
+  String Protocol;
+  Boolean Negotiated;
+  Int32 Id {get; };
+};
+
+runtimeclass DataChannel
+{
+  void RegisterObserver(DataChannelObserver observer);
+  String Label { get; };
+  Boolean Reliable{ get; };
+  String Ordered{ get; };
+  String Negotiated;
+  Int16 MaxRetransmitTime;
+  Int16 MaxRetransmits;
+  Int32 Id{ get; };
+  void Close();
+  String Send(DataBuffer buffer);
+};
+
+runtimeclass DataChannelObserver
+{
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannelObserverOnStateChangeDelegate OnStateChange;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannelObserverOnMessageDelegate OnMessage;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannelObserverOnBufferedAmountChangeDelegate OnBufferedAmountChange;
+  /*void OnStateChange();
+  void OnMessage(DataBuffer buffer);
+  void OnBufferedAmountChange(Int64 sent_data_size);*/
+};
+
+runtimeclass DataBuffer
+{
+  DataBuffer(String data, Boolean binary);
+  Boolean binary;
+  // CopyOnWriteBuffer data;
 };
 
 runtimeclass IceCandidate
@@ -230,6 +281,11 @@ delegate void PeerConnectionObserverOnSignalingChangeDelegate(Microsoft.WinRTC.W
 delegate void PeerConnectionObserverOnTrackDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpTransceiver value);
 delegate void SetSessionDescriptionObserverOnSuccessDelegate();
 delegate void SetSessionDescriptionObserverOnFailureDelegate(String error_message);
+
+delegate void DataChannelObserverOnStateChangeDelegate();
+delegate void DataChannelObserverOnMessageDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.DataBuffer buffer);
+delegate void DataChannelObserverOnBufferedAmountChangeDelegate(Int64 sent_data_size);
+
 } // Microsoft.WinRTC.WebRtcWrapper.webrtc
 
 namespace Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection
@@ -295,6 +351,8 @@ runtimeclass PeerConnection
   Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpSender AddVideoTrack(Microsoft.WinRTC.WebRtcWrapper.webrtc.VideoTrack /*FIXME*/ track, IVector<String> stream_ids);
   void CreateOffer(Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.RTCOfferAnswerOptions options);
   void CreateAnswer(Microsoft.WinRTC.WebRtcWrapper.webrtc.CreateSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection.RTCOfferAnswerOptions options);
+  Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannel CreateDataChannel(
+      String label, Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannelInit config);
 };
 
 runtimeclass RTCConfiguration
@@ -318,6 +376,7 @@ runtimeclass RTCOfferAnswerOptions
   Int32 NumSimulcastLayers;
   Boolean UseObsoleteSctpSdp;
 };
+
 } // Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnection
 
 namespace Microsoft.WinRTC.WebRtcWrapper.webrtc

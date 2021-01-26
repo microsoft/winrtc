@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -22,6 +25,7 @@
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/thread.h"
 #include "api/audio_options.h"
+#include "api/data_channel_interface.h"
 #include "api/jsep.h"
 #include "api/peer_connection_interface.h"
 #include "api/scoped_refptr.h"

@@ -31,6 +31,8 @@ struct PeerConnection : PeerConnectionT<PeerConnection>
 
   void CreateAnswer(Microsoft::WinRTC::WebRtcWrapper::webrtc::CreateSessionDescriptionObserver const &observer,
                     Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::RTCOfferAnswerOptions const &options);
+  Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannel CreateDataChannel(
+      hstring const &label, Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannelInit const &config);
 
 private:
   ::rtc::scoped_refptr<::webrtc::PeerConnectionInterface> webrtc_peer_connection_;

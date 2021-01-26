@@ -126,6 +126,18 @@
     <ClCompile Include="webrtc.VideoTrack.cpp">
       <Filter>Wrappers</Filter>
     </ClCompile>
+    <ClCompile Include="webrtc.DataChannelObserver.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.DataBuffer.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.DataChannel.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="webrtc.DataChannelInit.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -235,6 +247,18 @@
       <Filter>Wrappers</Filter>
     </ClInclude>
     <ClInclude Include="webrtc.VideoTrack.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.DataBuffer.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.DataChannel.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.DataChannelInit.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.DataChannelObserver.h">
       <Filter>Wrappers</Filter>
     </ClInclude>
   </ItemGroup>

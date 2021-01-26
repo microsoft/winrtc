@@ -135,4 +135,13 @@ PeerConnection::CreateAnswer(
       *get_self<RTCOfferAnswerOptions>(options));
 }
 
+ Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannel
+PeerConnection::CreateDataChannel(hstring const &label,
+                                  Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannelInit const &config)
+{
+  webrtc_peer_connection_->CreateDataChannel(
+     to_string(label), 
+      *get_self<DataChannelInit>(config));
+}
+
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::implementation
