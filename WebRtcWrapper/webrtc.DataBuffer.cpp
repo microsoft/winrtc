@@ -7,12 +7,12 @@
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 {
-DataBuffer::DataBuffer(const ::rtc::CopyOnWriteBuffer &data, bool binary)
-    : data(data), binary_(binary)
-    {
-        ::webrtc::DataBuffer::DataBuffer(data, binary);
-      
-    }
+//DataBuffer::DataBuffer(const ::webrtc:: &data, bool binary)
+//    : data(data), binary_(binary)
+//    {
+//        ::webrtc::DataBuffer::DataBuffer(data, binary);
+//      
+//    }
 
  /*DataBuffer::DataBuffer(const string text) : data(text.data(), text.length()), binary(false)
     {
@@ -21,10 +21,16 @@ DataBuffer::DataBuffer(const ::rtc::CopyOnWriteBuffer &data, bool binary)
    
     bool DataBuffer::binary()
     {
-        return binary_;
+        return pData_->binary;
     }
     void DataBuffer::binary(bool value)
     {
-      binary_ = value;
+      pData_->binary = value;
     }
-}
+
+    ::webrtc::DataBuffer &
+    DataBuffer::get_webrtc_data_buffer()
+    {
+      return *pData_;
+    }
+    }

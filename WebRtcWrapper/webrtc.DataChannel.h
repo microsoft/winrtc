@@ -1,12 +1,13 @@
 #pragma once
 #include "webrtc.DataChannel.g.h"
+#include "webrtc.DataBuffer.h"
 
 // Note: Remove this static_assert after copying these generated source files to your project.
 // This assertion exists to avoid compiling these generated source files directly.
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 {
-    struct DataChannel : DataChannelT<DataChannel>
+struct DataChannel : DataChannelT<DataChannel>
     {
       DataChannel(::rtc::scoped_refptr < ::webrtc::DataChannelInterface> webrtc_data_channel);
 

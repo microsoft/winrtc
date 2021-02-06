@@ -8,76 +8,76 @@
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 {
-    DataChannelInit::DataChannelInit(const ::webrtc::DataChannelInit& webrtc_data_channel_init)
-        : webrtc_data_channel_init_(webrtc_data_channel_init)
-    {
-
-    }
+//DataChannelInit::DataChannelInit(::rtc::scoped_refptr<::webrtc::DataChannelInit> &webrtc_data_channel_init)
+//        : webrtc_data_channel_init_(webrtc_data_channel_init)
+//    {
+//
+//    }
 
     bool
     DataChannelInit::Reliable()
     {
-        return reliable;
+      return webrtc_data_channel_init_.reliable;
     }
 
     void DataChannelInit::Reliable(bool value)
     {
-      reliable = value;
+      webrtc_data_channel_init_.reliable = value;
     }
 
     bool DataChannelInit::Ordered()
     {
-      return ordered;
+      return webrtc_data_channel_init_.ordered;
     }
 
     int32_t DataChannelInit::MaxRetransmitTime()
     {
-      return maxRetransmitTime.value();
+      return webrtc_data_channel_init_.maxRetransmitTime.value();
     }
 
     void DataChannelInit::MaxRetransmitTime(int32_t value)
     {
-      maxRetransmitTime = value;
+      webrtc_data_channel_init_.maxRetransmitTime = value;
     }
 
     int32_t DataChannelInit::MaxRetransmits()
     {
-      return maxRetransmits.value();
+      return webrtc_data_channel_init_.maxRetransmits.value();
     }
 
     void DataChannelInit::MaxRetransmits(int32_t value)
     {
-      maxRetransmits = value;
+      webrtc_data_channel_init_.maxRetransmits = value;
     }
 
     hstring DataChannelInit::Protocol()
     {
-      return to_hstring(protocol);
+      return to_hstring(webrtc_data_channel_init_.protocol);
     }
 
     void DataChannelInit::Protocol(hstring const& value)
     {
-       protocol = to_string(value);
+      webrtc_data_channel_init_.protocol = to_string(value);
     }
 
     bool DataChannelInit::Negotiated()
     {
-      return negotiated;
+      return webrtc_data_channel_init_.negotiated;
     }
 
     void DataChannelInit::Negotiated(bool value)
     {
-      negotiated = value;
+      webrtc_data_channel_init_.negotiated = value;
     }
 
     int32_t DataChannelInit::Id()
     {
-      return id;
+      return webrtc_data_channel_init_.id;
     }
     
-    const ::webrtc::DataChannelInit *
-    DataChannelInit::get_webrtc_data_channel_init() const
+    const ::webrtc::DataChannelInit*
+    DataChannelInit::get_webrtc_data_channel_init() 
     {
-      /*return &webrtc_data_channel_init_;*/
+      return &webrtc_data_channel_init_;
     }
 }

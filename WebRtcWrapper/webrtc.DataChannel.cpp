@@ -13,6 +13,8 @@ DataChannel::DataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> we
 {
 
 }
+    
+    
 
     void
     DataChannel::RegisterObserver(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannelObserver const &observer)
@@ -67,26 +69,28 @@ DataChannel::DataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> we
     char
     DataChannel::DataString(DataState state)
     {
-      switch (state)
-      {
-     /* case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kConnecting:
-        on_state_change_event_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kConnecting);
-        break;
-      case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kOpen:
-        webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kOpen);
-        break;
-      case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosing:
-        webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosing);
-        break;
-      case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosed:
-        webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosed);
-        break;*/
-      default: {
-        throw hresult_illegal_state_change();
-      }
-        ;
-      }
-      return 0;
+
+        throw hresult_not_implemented();
+     // switch (state)
+     // {
+     ///* case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kConnecting:
+     //   on_state_change_event_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kConnecting);
+     //   break;
+     // case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kOpen:
+     //   webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kOpen);
+     //   break;
+     // case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosing:
+     //   webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosing);
+     //   break;
+     // case winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosed:
+     //   webrtc_data_channel_(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataState::kClosed);
+     //   break;*/
+     // default: {
+     //   throw hresult_illegal_state_change();
+     // }
+     //   ;
+     // }
+     // return 0;
     }
     int32_t DataChannel::Id()
     {
@@ -98,6 +102,11 @@ DataChannel::DataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> we
     }
     hstring DataChannel::Send(Microsoft::WinRTC::WebRtcWrapper::webrtc::DataBuffer const& buffer)
     {
+      webrtc_data_channel_->Send(get_self<DataBuffer>(buffer)->get_webrtc_data_buffer());
+
+      //throw hresult_not_implemented();
+
+        //to_hstring(webrtc_data_channel_->Send(buffer));
       /*webrtc_data_channel_->Send(buffer);
       ::webrtc::DataBuffer data = buffer;*/
       /* return to_hstring(Send_t(buffer));*/
@@ -112,4 +121,5 @@ DataChannel::DataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> we
     {
       return webrtc_data_channel_;
     }
-    }
+
+}

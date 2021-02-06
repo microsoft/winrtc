@@ -141,10 +141,15 @@ runtimeclass DataChannelObserver
 
 runtimeclass DataBuffer
 {
-  DataBuffer(String data, Boolean binary);
+  DataBuffer(String data);
   Boolean binary;
   // CopyOnWriteBuffer data;
 };
+
+[default_interface]
+runtimeclass DataBuffer_Helper
+{
+}
 
 runtimeclass IceCandidate
 {

@@ -7,10 +7,10 @@
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 {
-    struct DataChannelInit : DataChannelInitT<DataChannelInit>, ::webrtc::DataChannelInit
+    struct DataChannelInit : DataChannelInitT<DataChannelInit>
     {
       DataChannelInit() = default;
-      explicit DataChannelInit(const ::webrtc::DataChannelInit &webrtc_data_channel_init);
+      //explicit DataChannelInit(::rtc::scoped_refptr<::webrtc::DataChannelInit> &webrtc_data_channel_init);
 
         bool Reliable();
         void Reliable(bool value);
@@ -25,9 +25,17 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
         void Negotiated(bool value);
         int32_t Id();
 
-        const ::webrtc::DataChannelInit *get_webrtc_data_channel_init() const;
+       const ::webrtc::DataChannelInit*  get_webrtc_data_channel_init();
 
       private:
         ::webrtc::DataChannelInit webrtc_data_channel_init_;
     };
 }
+
+
+//namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
+//{
+//struct DataChannelInit : DataChannelInitT<DataChannelInit, implementation::DataChannelInit>
+//{
+//};
+//}

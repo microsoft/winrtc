@@ -132,6 +132,7 @@
     <ClInclude Include="webrtc.AudioEncoderFactory.h" />
     <ClInclude Include="cricket.AudioOptions.h" />
     <ClInclude Include="webrtc.DataBuffer.h" />
+    <ClInclude Include="webrtc.DataBuffer_Helper.h" />
     <ClInclude Include="webrtc.DataChannel.h" />
     <ClInclude Include="webrtc.DataChannelInit.h" />
     <ClInclude Include="webrtc.DataChannelObserver.h" />
@@ -175,6 +176,7 @@
     <ClCompile Include="webrtc.AudioEncoderFactory.cpp" />
     <ClCompile Include="cricket.AudioOptions.cpp" />
     <ClCompile Include="webrtc.DataBuffer.cpp" />
+    <ClCompile Include="webrtc.DataBuffer_Helper.cpp" />
     <ClCompile Include="webrtc.DataChannel.cpp" />
     <ClCompile Include="webrtc.DataChannelInit.cpp" />
     <ClCompile Include="webrtc.DataChannelObserver.cpp" />

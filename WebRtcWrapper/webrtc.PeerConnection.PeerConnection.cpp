@@ -15,6 +15,7 @@
 #include "webrtc.RtpSender.h"
 #include "webrtc.CreateSessionDescriptionObserver.h"
 #include "webrtc.PeerConnection.RTCOfferAnswerOptions.h"
+#include "webrtc.DataChannelInit.h"
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::implementation
 {
@@ -139,9 +140,13 @@ PeerConnection::CreateAnswer(
 PeerConnection::CreateDataChannel(hstring const &label,
                                   Microsoft::WinRTC::WebRtcWrapper::webrtc::DataChannelInit const &config)
 {
-  webrtc_peer_connection_->CreateDataChannel(
-     to_string(label), 
-      *get_self<DataChannelInit>(config));
-}
+   
+  webrtc_peer_connection_->CreateDataChannel(to_string(label), get_self<Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation::DataChannelInit>(config)
+                            ->get_webrtc_data_channel_init());
+
+
+
+
+ } 
 
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::implementation
