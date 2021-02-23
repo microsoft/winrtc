@@ -110,7 +110,7 @@ Did you find this page helpful? [Let us know by providing your feedback](https:/
 
 ## Support
 
-Let us know how we can help. [For Support](https://github.com/microsoft/winrtc/blob/master/docs/SUPPORT.md)
+Let us know how we can help. [For Support](../docs/SUPPORT.md)
 
 ---
 
