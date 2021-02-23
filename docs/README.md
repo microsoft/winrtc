@@ -104,9 +104,13 @@ Most contributions require you to agree to a [Contributor License Agreement (CLA
 
 ## Feedback
 
-Did you find this page helpful? [Let us know by providing your feedback](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR-tCZConOl1DsmA7Z5sVzcpUQTNTSkRaWEMxVFJVWDdQWUpSOUxCRVJNVC4u). 
+Did you find this page helpful? [Let us know by providing your feedback](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR-tCZConOl1DsmA7Z5sVzcpUQTNTSkRaWEMxVFJVWDdQWUpSOUxCRVJNVC4u).  
 
-You can also [file an issue](https://github.com/microsoft/winrtc/issues/new/choose) to report a bug or propose a new feature. 
+---
+
+## Support
+
+Let us know how we can help. [For Support](https://github.com/microsoft/winrtc/blob/master/docs/SUPPORT.md)
 
 ---
 
