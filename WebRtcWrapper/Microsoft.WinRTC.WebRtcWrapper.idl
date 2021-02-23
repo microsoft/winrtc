@@ -106,13 +106,14 @@ runtimeclass CreateSessionDescriptionObserver
 
 runtimeclass DataChannelInit
 {
+  DataChannelInit();
   Boolean Reliable;
-  Boolean Ordered {get; };
+  Boolean Ordered;
   Int32 MaxRetransmitTime;
   Int32 MaxRetransmits;
   String Protocol;
   Boolean Negotiated;
-  Int32 Id {get; };
+  Int32 Id;
 };
 
 runtimeclass DataChannel

@@ -1,0 +1,16 @@
+﻿<Page
+    x:Class="CsWinRTCApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CsWinRTCApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <RelativePanel Background = "{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Hub Header = "Hi, this Winrtc sample"/>
+        <Button Content = "Go to Messages" Margin = "64,131,0,477" Click = "MessagePage_click"/>
+        <Button Content = "Go to Calling" Margin = "64,210,0,398" Click = "CallPage_click"/>
+    </RelativePanel>
+</Page>

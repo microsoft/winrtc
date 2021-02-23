@@ -15,7 +15,7 @@
 		</ClCompile>
 		<Link>
 			<AdditionalDependencies>webrtc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies>C:\winrtc\samples\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14170001-alpha\lib\native\$(Configuration)\$(Platform)\v142\webrtc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\winrtc\samples\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14370001-beta.1\lib\native\$(Configuration)\$(Platform)\v142\webrtc.lib;%(AdditionalDependencies)</AdditionalDependencies>
 			<AdditionalLibraryDirectories>C:\webrtc\src\out\msvc\uwp\$(Configuration)\$(Platform)\obj;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 			<IgnoreSpecificDefaultLibraries Condition="'$(Configuration)'=='Release'">libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
 			<IgnoreSpecificDefaultLibraries Condition="'$(Configuration)'=='Debug'">libcmtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>

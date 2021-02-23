@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<wpf:UserControl  xmlns:wpf="http://schemas.microsoft.com/netfx/2007/xaml/presentation"
+                  x:Name="root"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    x:Class="CsAPP.Components.Picker"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <wpf:Grid>
+        <wpf:Grid.ColumnDefinitions>
+            <wpf:ColumnDefinition Width="5*" />
+            <wpf:ColumnDefinition Width="3*" />
+            </wpf:Grid.ColumnDefinitions>
+
+        <wpf:Grid wpf:Grid.Column="0" wpf:Grid.IsSharedSizeScope="True">
+            <wpf:Grid.RowDefinitions>
+                <wpf:RowDefinition Height="*" />
+                <wpf:RowDefinition Height="*" />
+                <wpf:RowDefinition Height="*" />
+                </wpf:Grid.RowDefinitions>
+
+                <!-- Red -->
+            <wpf:Grid wpf:Grid.Row="0">
+                <wpf:Grid.ColumnDefinitions>
+                    <wpf:ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                    <wpf:ColumnDefinition Width="*" />
+                    <wpf:ColumnDefinition Width="40" />
+                    </wpf:Grid.ColumnDefinitions>
+
+                <wpf:TextBlock wpf:Grid.Column="0" Text="Red" />
+                <wpf:Slider wpf:Grid.Column="1" Margin="10 0"
+                    VerticalAlignment="Center"
+                    Maximum="255"
+                    Minimum="0"
+                    Value="{wpf:Binding Red, ElementName=root}" />
+                <wpf:TextBox wpf:Grid.Column="2"
+                    HorizontalContentAlignment="Center"
+                    Text="{wpf:Binding Red, ElementName=root, UpdateSourceTrigger=PropertyChanged}" />
+                </wpf:Grid>
+
+                <!-- Green -->
+            <wpf:Grid wpf:Grid.Row="1" Margin="0 20">
+                <wpf:Grid.ColumnDefinitions>
+                    <wpf:ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                    <wpf:ColumnDefinition Width="*" />
+                    <wpf:ColumnDefinition Width="40" />
+                    </wpf:Grid.ColumnDefinitions>
+
+                <wpf:TextBlock wpf:Grid.Column="0" Text="Green" />
+                <wpf:Slider wpf:Grid.Column="1" Margin="10 0"
+                    VerticalAlignment="Center"
+                    Maximum="255"
+                    Minimum="0"
+                    Value="{wpf:Binding Green, ElementName=root}" />
+                <wpf:TextBox wpf:Grid.Column="2"
+                    HorizontalContentAlignment="Center"
+                    Text="{wpf:Binding Green, ElementName=root, UpdateSourceTrigger=PropertyChanged}" />
+                </wpf:Grid>
+
+                <!-- Blue -->
+            <wpf:Grid wpf:Grid.Row="2">
+                <wpf:Grid.ColumnDefinitions>
+                    <wpf:ColumnDefinition Width="auto" SharedSizeGroup="Label" />
+                    <wpf:ColumnDefinition Width="*" />
+                    <wpf:ColumnDefinition Width="40" />
+                    </wpf:Grid.ColumnDefinitions>
+
+                <wpf:TextBlock wpf:Grid.Column="0" Text="Blue" />
+                <wpf:Slider wpf:Grid.Column="1" Margin="10 0"
+                    VerticalAlignment="Center"
+                    Maximum="255"
+                    Minimum="0"
+                    Value="{wpf:Binding Blue, ElementName=root}" />
+                <wpf:TextBox wpf:Grid.Column="2"
+                    HorizontalContentAlignment="Center"
+                    Text="{wpf:Binding Blue, ElementName=root, UpdateSourceTrigger=PropertyChanged}" />
+                </wpf:Grid>
+            </wpf:Grid>
+
+            <!-- Preview -->
+        <wpf:Rectangle wpf:Grid.Column="1" Margin="10 0 0 0"
+            MaxWidth="{wpf:Binding ActualHeight, RelativeSource={wpf:RelativeSource Self}}"
+            Fill="{wpf:Binding ColorBrush, ElementName=root}" />
+        </wpf:Grid>
+        </wpf:UserControl>

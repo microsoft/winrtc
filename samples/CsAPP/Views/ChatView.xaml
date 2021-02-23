@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<wpf:UserControl
+    xmlns:wpf="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
+   xmlns="http://xamarin.com/schemas/2014/forms"
+   x:Class="CsAPP.Views.ChatView"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+   xmlns:components="clr-namespace:CsAPP.Components"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewmodels="clr-namespace:CsAPP.ViewModels"
+    d:DataContext="{d:DesignInstance viewmodels:ChatViewModel}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    FontSize="18"
+    mc:Ignorable="d">
+
+    <wpf:StackPanel>
+        <!-- Header -->
+        <wpf:TextBlock
+            HorizontalAlignment="Center"
+            FontSize="32"
+            Text="Color Chat Room"
+            TextAlignment="Center" />
+
+        <!-- Error Message -->
+        <wpf:TextBlock Margin="0 20 0 0"
+            HorizontalAlignment="Center"
+            Foreground="DarkRed"
+            Text="{wpf:Binding ErrorMessage}">
+            <wpf:TextBlock.Style>
+                <wpf:Style TargetType="wpf:TextBlock">
+                    <wpf:Style.Triggers>
+                        <wpf:DataTrigger Binding="{wpf:Binding HasErrorMessage}" Value="False">
+                            <wpf:Setter Property="Visibility" Value="Collapsed" />
+                        </wpf:DataTrigger>
+                    </wpf:Style.Triggers>
+                </wpf:Style>
+            </wpf:TextBlock.Style>
+        </wpf:TextBlock>
+
+        <!-- Send Color Form -->
+        <wpf:StackPanel Margin="20 0">
+            <wpf:TextBlock Margin="0 20 0 0"
+                FontSize="24"
+                Text="Send Color" />
+
+            <components:Picker wpf:Grid.Column="0" Margin="0 20 0 0"
+                Blue="{wpf:Binding Blue}"
+                Green="{wpf:Binding Green}"
+                Red="{wpf:Binding Red}" />
+
+            <wpf:Button wpf:Grid.Column="1" Margin="0 20 0 0" Padding="10 3"
+                HorizontalAlignment="Left"
+                Command="{wpf:Binding SendMessageCommand}"
+                Content="Send" />
+        </wpf:StackPanel>
+
+        <!-- Color Messages Listing -->
+        <wpf:StackPanel Margin="20 20 20 0">
+            <wpf:TextBlock Margin="0 20 0 0"
+                FontSize="24"
+                Text="Color Messages" />
+
+            <wpf:ListView Margin="0 20 0 0"
+                BorderThickness="0"
+                ItemsSource="{wpf:Binding Messages}"
+                wpf:ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                
+                <wpf:ListView.ItemContainerStyle>
+                    <wpf:Style TargetType="wpf:ListViewItem">
+                        <wpf:Setter Property="Template">
+                            <wpf:Setter.Value>
+                                <wpf:ControlTemplate TargetType="wpf:ListViewItem">
+                                    <wpf:ContentPresenter />
+                                </wpf:ControlTemplate>
+                            </wpf:Setter.Value>
+                        </wpf:Setter>
+                    </wpf:Style>
+                </wpf:ListView.ItemContainerStyle>
+                <wpf:ListView.ItemsPanel>
+                    <wpf:ItemsPanelTemplate>
+                        <wpf:WrapPanel />
+                    </wpf:ItemsPanelTemplate>
+                </wpf:ListView.ItemsPanel>
+                <wpf:ListView.ItemTemplate>
+                    <wpf:DataTemplate>
+                        <wpf:Rectangle Margin="0 10 10 10"
+                            Width="50"
+                            Height="50"
+                            Fill="{wpf:Binding ColorBrush}" />
+                    </wpf:DataTemplate>
+                </wpf:ListView.ItemTemplate>
+            </wpf:ListView>
+        </wpf:StackPanel>
+    </wpf:StackPanel>
+</wpf:UserControl>

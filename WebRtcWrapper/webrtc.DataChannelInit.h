@@ -15,6 +15,7 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
         bool Reliable();
         void Reliable(bool value);
         bool Ordered();
+        void Ordered(bool value);
         int32_t MaxRetransmitTime();
         void MaxRetransmitTime(int32_t value);
         int32_t MaxRetransmits();
@@ -24,6 +25,7 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
         bool Negotiated();
         void Negotiated(bool value);
         int32_t Id();
+        void Id(int32_t value);
 
        const ::webrtc::DataChannelInit*  get_webrtc_data_channel_init();
 
@@ -33,9 +35,9 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 }
 
 
-//namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
-//{
-//struct DataChannelInit : DataChannelInitT<DataChannelInit, implementation::DataChannelInit>
-//{
-//};
-//}
+namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
+{
+    struct DataChannelInit : DataChannelInitT<DataChannelInit, implementation::DataChannelInit>
+    {
+    };
+}

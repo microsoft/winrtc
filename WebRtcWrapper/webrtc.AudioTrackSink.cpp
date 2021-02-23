@@ -8,10 +8,12 @@
 // clang-format on
 
 #include "winrt/Windows.Storage.Streams.h"
+using namespace winrt::Windows::Storage::Streams;
+using namespace winrt::Windows::Foundation;
 
 using namespace winrt;
-using namespace Windows::Foundation;
-using namespace Windows::Storage::Streams;
+//using namespace Windows::Foundation;
+//using namespace Windows::Storage::Streams;
 
 struct __declspec(uuid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")) __declspec(novtable) IMemoryBufferByteAccess
     : ::IUnknown

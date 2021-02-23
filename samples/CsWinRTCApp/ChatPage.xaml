@@ -1,0 +1,33 @@
+﻿<Page
+    x:Class="CsWinRTCApp.ChatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CsWinRTCApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <RelativePanel>
+        <TextBox x:Name="name" RelativePanel.AlignRightWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignTopWithPanel="True"></TextBox>
+        <ListView x:Name="lv" ItemsSource="{Binding Messages}" RelativePanel.Above="rp" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True" RelativePanel.Below="name">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:ChatMessage">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock>
+                        <Run Text="{x:Bind Username}"></Run>
+                        <Run Text=": "></Run>
+                        <Run Text="{x:Bind Message}"></Run>
+                        </TextBlock>
+
+                    </StackPanel>
+                </DataTemplate>
+
+            </ListView.ItemTemplate>
+        </ListView>
+        <RelativePanel x:Name="rp" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
+            <TextBox x:Name="text" RelativePanel.AlignLeftWithPanel="True" RelativePanel.LeftOf="send" ></TextBox>
+            <Button x:Name="send" RelativePanel.AlignRightWithPanel="True" Content="Send" Click="Message_send"></Button>
+        </RelativePanel>
+    </RelativePanel>
+</Page>

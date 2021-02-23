@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage 
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="CsWinRTC.Video_Call"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winrtc="Microsoft.WinRtc.Simple.VideoConferencing"
+    mc:Ignorable="d" >
+
+    <winrtc:AppRtcControl x:Name="Control" />
+</ContentPage>

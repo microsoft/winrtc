@@ -30,6 +30,12 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
       return webrtc_data_channel_init_.ordered;
     }
 
+    void
+    DataChannelInit::Ordered(bool value)
+    {
+      webrtc_data_channel_init_.ordered = value;
+    }
+
     int32_t DataChannelInit::MaxRetransmitTime()
     {
       return webrtc_data_channel_init_.maxRetransmitTime.value();
@@ -73,6 +79,12 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
     int32_t DataChannelInit::Id()
     {
       return webrtc_data_channel_init_.id;
+    }
+
+    void
+    DataChannelInit::Id(int32_t value)
+    {
+      webrtc_data_channel_init_.id = value;
     }
     
     const ::webrtc::DataChannelInit*

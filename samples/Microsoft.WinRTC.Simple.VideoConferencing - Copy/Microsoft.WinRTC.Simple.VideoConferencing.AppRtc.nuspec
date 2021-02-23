@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+!-->
+
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.WinRTC.Simple.VideoConferencing.AppRtc</id>
+    <version>0.0.12-alpha</version>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>http://github.com/microsoft/winrtc</projectUrl>
+    <iconUrl>http://github.com/contoso/UsefulStuff/nuget_icon.png</iconUrl>
+    <description>Xaml component for allowing Windows native apps to do secure and interoperable video conferencing with WebRTC.</description>
+    <releaseNotes>First alpha drop. Only communicates with AppRtc.</releaseNotes>
+    <copyright>Copyright (c) Microsoft Corporation</copyright>
+    <tags>webrtc, winrtc, uwp, windows, rtc, real time communication, native</tags>
+
+    <dependencies>
+      <group targetFramework="uap10.0">
+        <dependency id="Microsoft.Graphics.Canvas" version="1.25.00" />
+      </group>
+    </dependencies>
+
+  </metadata>
+
+  <!-- A readme.txt to display when the package is installed -->
+	
+  <files>
+    <file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing.winmd" target="lib/uap10.0"/>
+    <file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRtc.Simple.VideoConferencing.xml" target="lib/uap10.0"/>
+
+    <file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing/AppRtcControl.xaml"  target="lib/uap10.0"/>
+	<file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing/Themes/Generic.xaml" target="lib/uap10.0/Themes"/>
+
+	<file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRtc.Simple.VideoConferencing.dll" target="runtimes/win10-x64/native"/>
+    <file src="../x64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing.pri" target="runtimes/win10-x64/native"/>
+
+    <file src="../x64/Debug/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRtc.Simple.VideoConferencing.dll" target="runtimes/win10-x64/native"/>
+    <file src="../x64/Debug/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing.pri" target="runtimes/win10-x64/native"/>
+    
+    <file src="../ARM64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRtc.Simple.VideoConferencing.dll" target="runtimes/win10-ARM64/native"/>
+    <file src="../ARM64/Release/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing.pri" target="runtimes/win10-ARM64/native"/>
+    
+    <file src="../ARM64/Debug/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRtc.Simple.VideoConferencing.dll" target="runtimes/win10-ARM64/native"/>
+    <file src="../ARM64/Debug/Microsoft.WinRTC.Simple.VideoConferencing/Microsoft.WinRTC.Simple.VideoConferencing.pri" target="runtimes/win10-ARM64/native"/>
+    
+    <file src="Microsoft.WinRTC.Simple.VideoConferencing.AppRtc.targets" target="build/native"/>
+  </files>
+</package>
