@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14170001-alpha\build\native\Microsoft.WinRTC.libwebrtc.uwp.props" Condition="Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14170001-alpha\build\native\Microsoft.WinRTC.libwebrtc.uwp.props')" />
+  <Import Project="..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="..\packages\Microsoft.WinRTC.libwebrtc.84.0.13000001-alpha\build\native\Microsoft.WinRTC.libwebrtc.props" Condition="Exists('..\packages\Microsoft.WinRTC.libwebrtc.84.0.13000001-alpha\build\native\Microsoft.WinRTC.libwebrtc.props')" />
   <Import Project="..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.props')" />
   <PropertyGroup Label="Globals">
     <CppWinRTOptimized>true</CppWinRTOptimized>
@@ -14,8 +17,8 @@
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
-    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.18362.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.0.0</Version>
     <PackageOutputPath>%(OutputPath)</PackageOutputPath>
@@ -163,7 +166,7 @@
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ole32.lib;oleaut32.lib;Kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ole32.lib;oleaut32.lib;Kernel32.lib;webrtc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\webrtc\src\out\msvc\uwp\$(Configuration)\$(PlatformTarget)\obj;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries Condition="'$(Configuration)|$(Platform)'=='Release|x64'">libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
@@ -174,7 +177,7 @@
     </ClCompile>
     <ClCompile>
       <GenerateXMLDocumentationFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateXMLDocumentationFiles>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\webrtc\src;c:\webrtc\src\out\msvc\uwp\$(Configuration)\$(PlatformTarget)\gen;c:\webrtc\src\third_party\abseil-cpp;c:\webrtc\src\third_party\libyuv\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -219,6 +222,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets" Condition="Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" />
     <Import Project="..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\MyFirstWinRtc\VideoConferencing\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets" Condition="Exists('..\MyFirstWinRtc\VideoConferencing\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -227,5 +232,10 @@
     <Error Condition="!Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets'))" />
     <Error Condition="!Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\webrtc\src\out\msvc\uwp\Release\x64\packages\Microsoft.Windows.CppWinRT.2.0.200703.9\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.WinRTC.libwebrtc.84.0.13000001-alpha\build\native\Microsoft.WinRTC.libwebrtc.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.WinRTC.libwebrtc.84.0.13000001-alpha\build\native\Microsoft.WinRTC.libwebrtc.props'))" />
+    <Error Condition="!Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.Windows.CppWinRT.2.0.200729.8\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14170001-alpha\build\native\Microsoft.WinRTC.libwebrtc.uwp.props')" Text="$([System.String]::Format('$(ErrorText)', '..\MyFirstWinRtc\VideoConferencing\packages\Microsoft.WinRTC.libwebrtc.uwp.84.0.14170001-alpha\build\native\Microsoft.WinRTC.libwebrtc.uwp.props'))" />
+    <Error Condition="!Exists('..\MyFirstWinRtc\VideoConferencing\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\MyFirstWinRtc\VideoConferencing\packages\Win2D.uwp.1.25.0\build\native\Win2D.uwp.targets'))" />
   </Target>
 </Project>
