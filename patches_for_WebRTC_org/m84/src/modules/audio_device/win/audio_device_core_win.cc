@@ -1352,6 +1352,13 @@ struct RenderDeviceInternal
     EXIT_ON_ERROR(hr);
     RTC_LOG(LS_VERBOSE) << "[REND] size of buffer       : " << bufferLength;
 
+    // Get the number of frames of padding (queued up to play) in the
+    // endpoint buffer.
+    UINT32 padding = 0;
+    hr = _audioClient->GetCurrentPadding(&padding);
+    EXIT_ON_ERROR(hr);
+    RTC_LOG(LS_VERBOSE) << "[REND] padding       : " << padding;
+
     // Get maximum latency for the current stream (will not change for the
     // lifetime  of the IAudioClient object).
     //
@@ -1390,13 +1397,16 @@ struct RenderDeviceInternal
     RTC_LOG(LS_VERBOSE) << "[REND] endpointBufferSizeMS : "
                         << endpointBufferSizeMS;
 
+    // Derive the amount of available space in the output buffer
+    uint32_t framesAvailable = bufferLength - padding;
+
     // Before starting the stream, fill the rendering buffer with silence.
     //
     BYTE* pData = nullptr;
-    hr = _audioRenderClient->GetBuffer(bufferLength, &pData);
+    hr = _audioRenderClient->GetBuffer(framesAvailable, &pData);
     EXIT_ON_ERROR(hr);
 
-    hr = _audioRenderClient->ReleaseBuffer(bufferLength,
+    hr = _audioRenderClient->ReleaseBuffer(framesAvailable,
                                            AUDCLNT_BUFFERFLAGS_SILENT);
     EXIT_ON_ERROR(hr);
 
@@ -1449,12 +1459,11 @@ struct RenderDeviceInternal
 
         // Get the number of frames of padding (queued up to play) in the
         // endpoint buffer.
-        UINT32 padding = 0;
         hr = _audioClient->GetCurrentPadding(&padding);
         EXIT_ON_ERROR(hr);
 
         // Derive the amount of available space in the output buffer
-        uint32_t framesAvailable = bufferLength - padding;
+        framesAvailable = bufferLength - padding;
 
         // Do we have 10 ms available in the render buffer?
         if (framesAvailable < _blockSize) {
