@@ -513,15 +513,11 @@ HRESULT VideoCaptureWinRTInternal::FrameArrived(
       hr = bitmap_buffer->GetPlaneCount(&plane_count);
     }
 
-    if (SUCCEEDED(hr)) {
-      hr = plane_count == 2 ? S_OK : E_FAIL;
-    }
-
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && plane_count >= 1) {
       hr = bitmap_buffer->GetPlaneDescription(0, &bitmap_plane_description_y);
     }
 
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && plane_count == 2) {
       hr = bitmap_buffer->GetPlaneDescription(1, &bitmap_plane_description_uv);
     }
 
