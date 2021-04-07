@@ -19,6 +19,8 @@
 #include <wrl/event.h>
 #include <wrl/wrappers/corewrappers.h>
 
+#include <memory>
+
 #include "api/scoped_refptr.h"
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/critical_section.h"
@@ -32,9 +34,10 @@
       goto Cleanup; \
   } while (false)
 
-HRESULT WaitForASyncWithEvent(_In_ IAsyncInfo* async_info,
-                              _In_ HANDLE event_completed_handle,
-                              _In_ DWORD timeout_ms);
+HRESULT WaitForASyncWithEvent(
+    _In_ IAsyncInfo* async_info,
+    _In_ std::shared_ptr<HANDLE> event_completed_handle_ptr,
+    _In_ DWORD timeout_ms);
 
 template <typename T>
 HRESULT WaitForAsyncOperation(
@@ -51,7 +54,7 @@ HRESULT WaitForAsyncOperation(
   const DWORD timeout_ms = 180000;
   ComPtr<IAsyncOperation<T>> async_op(p_async_op);
   ComPtr<IAsyncInfo> async_info;
-  HANDLE event_completed_handle = NULL;
+  std::shared_ptr<HANDLE> event_completed_handle_ptr = NULL;
 
   APTTYPE apt_type;
   APTTYPEQUALIFIER apt_qualifier;
@@ -73,10 +76,19 @@ HRESULT WaitForAsyncOperation(
   if (SUCCEEDED(hr)) {
     // Using raw HANDLE because WRL::Wrappers::Event doesn't always work across
     // threads and there is no agile option.
-    event_completed_handle =
+    HANDLE event_completed_handle =
         ::CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET,
                         WRITE_OWNER | EVENT_ALL_ACCESS);
-    hr = event_completed_handle ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    if (event_completed_handle) {
+      hr = S_OK;
+      event_completed_handle_ptr = std::shared_ptr<HANDLE>(
+          new HANDLE{event_completed_handle}, [](HANDLE* h) {
+            ::CloseHandle(*h);
+            delete h;
+          });
+    } else {
+      hr = HRESULT_FROM_WIN32(GetLastError());
+    }
   }
 
   if (SUCCEEDED(hr)) {
@@ -89,9 +101,9 @@ HRESULT WaitForAsyncOperation(
     // Defines the callback that will signal the event to unblock and resume.
     hr = async_op->put_Completed(
         Callback<IAsyncOperationCompletedHandler<T>>(
-            [event_completed_handle](IAsyncOperation<T>*,
-                                     AsyncStatus async_status) -> HRESULT {
-              ::SetEvent(event_completed_handle);
+            [event_completed_handle_ptr](IAsyncOperation<T>*,
+                                         AsyncStatus async_status) -> HRESULT {
+              ::SetEvent(*event_completed_handle_ptr);
 
               return async_status == Completed ? S_OK : E_ABORT;
             })
@@ -100,12 +112,8 @@ HRESULT WaitForAsyncOperation(
 
   // Block and suspend thread until the async operation finishes or timeout.
   if (SUCCEEDED(hr)) {
-    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle,
+    hr = WaitForASyncWithEvent(async_info.Get(), event_completed_handle_ptr,
                                timeout_ms);
-  }
-
-  if (event_completed_handle) {
-    ::CloseHandle(event_completed_handle);
   }
 
   if (SUCCEEDED(hr)) {
