@@ -637,6 +637,8 @@ struct AudioDeviceHelper : public DeviceHelper<DEVICE_CLASS> {
       CloseHandle(_hThread);
       _hThread = nullptr;
       _transporting = false;
+      _transportInitialized = false;
+      _mixerInitialized = false;
       return -1;
     }
 
@@ -649,6 +651,8 @@ struct AudioDeviceHelper : public DeviceHelper<DEVICE_CLASS> {
     ResetEvent(_hShutdownEvent);
 
     _transporting = false;
+    _transportInitialized = false;
+    _mixerInitialized = false;
 
     CloseHandle(_hThread);
     _hThread = nullptr;
