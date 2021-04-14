@@ -23,6 +23,10 @@ struct MediaStreamTrack : MediaStreamTrackT<MediaStreamTrack>, ::webrtc::Observe
   void AddOrUpdateSink(Microsoft::WinRTC::WebRtcWrapper::webrtc::VideoSink_VideoFrame const &sink,
                        Microsoft::WinRTC::WebRtcWrapper::rtc::VideoSinkWants const &wants);
 
+  void AddOrUpdateSink_UIElement(Microsoft::WinRTC::WebRtcWrapper::webrtc::VideoSink_VideoFrame_UIElement const &sink,
+                                 Microsoft::WinRTC::WebRtcWrapper::rtc::VideoSinkWants const &wants);
+
+
   ::rtc::scoped_refptr<::webrtc::MediaStreamTrackInterface> get_webrtc_media_stream_track();
 
   void OnChanged() override;

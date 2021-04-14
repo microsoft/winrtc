@@ -34,6 +34,53 @@ RTCOfferAnswerOptions::IceRestart(bool value)
 }
 
 bool
+RTCOfferAnswerOptions::OfferToReceiveAudio()
+{
+  return offer_to_receive_audio;
+}
+
+void
+RTCOfferAnswerOptions::OfferToReceiveAudio(bool value)
+{
+  if (value == true)
+  {
+    offer_to_receive_audio = 1;
+  }
+  else if (value == true)
+  {
+    offer_to_receive_audio = 0;
+  }
+  else
+  {
+    offer_to_receive_audio = kUndefined;
+  }
+}
+
+bool
+RTCOfferAnswerOptions::OfferToReceiveVideo()
+{
+  return offer_to_receive_video;
+}
+
+void
+RTCOfferAnswerOptions::OfferToReceiveVideo(bool value)
+{
+  if (value == true)
+  {
+    offer_to_receive_video = 1;
+  }
+  else if (value == false)
+  {
+    offer_to_receive_video = 0;
+  }
+  else
+  {
+    offer_to_receive_video = kUndefined;
+  }
+
+}
+
+bool
 RTCOfferAnswerOptions::UseRtpMux()
 {
   return use_rtp_mux;

@@ -20,7 +20,7 @@ struct PeerConnectionFactory : PeerConnectionFactoryT<PeerConnectionFactory>
   Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::PeerConnection CreatePeerConnection(
       Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::RTCConfiguration const &configuration,
       Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionDependencies const &dependencies);
-  Microsoft::WinRTC::WebRtcWrapper::webrtc::AudioSource CreateAudioSource(
+ Microsoft::WinRTC::WebRtcWrapper::webrtc::AudioSource CreateAudioSource(
       Microsoft::WinRTC::WebRtcWrapper::cricket::AudioOptions const &options);
   Microsoft::WinRTC::WebRtcWrapper::webrtc::AudioTrack CreateAudioTrack(
       hstring const &label, Microsoft::WinRTC::WebRtcWrapper::webrtc::AudioSource const &audio_source);

@@ -25,6 +25,9 @@ struct PeerConnectionObserver : PeerConnectionObserverT<PeerConnectionObserver>,
   winrt::event_token OnTrack(
       Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnTrackDelegate const &handler);
   void OnTrack(winrt::event_token const &token) noexcept;
+  winrt::event_token OnDataChannel(
+      Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnDataChannelDelegate const &handler);
+  void OnDataChannel(winrt::event_token const &token) noexcept;
 
   void OnSignalingChange(::webrtc::PeerConnectionInterface::SignalingState webrtc_new_state) override;
   void OnDataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> data_channel) override;
@@ -43,6 +46,8 @@ private:
   winrt::event<Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnIceCandidateDelegate>
       on_ice_candidate_event_;
   winrt::event<Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnTrackDelegate> on_track_event_;
+  winrt::event<Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnDataChannelDelegate>
+      on_data_channel_event_;
 };
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 

@@ -19,6 +19,15 @@
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::implementation
 {
+
+PeerConnection::PeerConnection() : webrtc_peer_connection_(::rtc::scoped_refptr<::webrtc::PeerConnectionInterface>())
+{
+}
+
+PeerConnection::~PeerConnection()
+{
+}
+
 PeerConnection::PeerConnection(::rtc::scoped_refptr<::webrtc::PeerConnectionInterface> webrtc_peer_connection)
     : webrtc_peer_connection_(webrtc_peer_connection)
 {

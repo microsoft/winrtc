@@ -66,14 +66,16 @@ enum DataState
   kClosed
 };
 
-[default_interface]
-runtimeclass AudioDecoderFactory
-{
+[default_interface] 
+runtimeclass AudioDecoderFactory 
+{ 
+    AudioDecoderFactory(); 
 };
 
-[default_interface]
-runtimeclass AudioEncoderFactory
-{
+[default_interface] 
+runtimeclass AudioEncoderFactory 
+{ 
+    AudioEncoderFactory(); 
 };
 
 runtimeclass AudioSource
@@ -128,6 +130,7 @@ runtimeclass DataChannel
   Int32 Id{ get; };
   void Close();
   String Send(DataBuffer buffer);
+  
 };
 
 runtimeclass DataChannelObserver
@@ -154,10 +157,10 @@ runtimeclass DataBuffer_Helper
 
 runtimeclass IceCandidate
 {
-  String SdpMid { get; };
-  Int32 SdpMlineIndex{ get; };
-  String ServerUrl{ get; };
-  String ToString{ get; };
+  String SdpMid;
+  Int32 SdpMlineIndex;
+  String ServerUrl;
+  String ToString;
 };
 
 unsealed runtimeclass MediaStreamTrack
@@ -169,6 +172,7 @@ unsealed runtimeclass MediaStreamTrack
   Boolean Enabled;
   // FIXME(aurighet): AddOrUpdateSink belongs to VideoTrack
   void AddOrUpdateSink(VideoSink_VideoFrame sink, Microsoft.WinRTC.WebRtcWrapper.rtc.VideoSinkWants wants);
+  void AddOrUpdateSink_UIElement(VideoSink_VideoFrame_UIElement sink, Microsoft.WinRTC.WebRtcWrapper.rtc.VideoSinkWants wants);
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.NotifierOnChangedDelegate OnChanged;
 };
 
@@ -195,6 +199,7 @@ runtimeclass PeerConnectionObserver
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnRenegotiationNeededDelegate OnRenegotiationNeeded;
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnSignalingChangeDelegate OnSignalingChange;
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnTrackDelegate OnTrack;
+  event Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionObserverOnDataChannelDelegate OnDataChannel;
 };
 
 runtimeclass RtpReceiver
@@ -230,19 +235,21 @@ runtimeclass SetSessionDescriptionObserver
   event Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserverOnFailureDelegate OnFailure;
 };
 
-[default_interface]
-runtimeclass VideoDecoderFactory
-{
-};
+[default_interface] runtimeclass VideoDecoderFactory { VideoDecoderFactory(); };
 
 [default_interface]
-runtimeclass VideoEncoderFactory
-{
-};
+runtimeclass VideoEncoderFactory { VideoEncoderFactory(); };
 
-[default_interface]
-runtimeclass VideoSink_VideoFrame {
+[default_interface] 
+runtimeclass VideoSink_VideoFrame 
+{
   VideoSink_VideoFrame(Windows.UI.Composition.VisualCollection visual_collection);
+};
+
+[default_interface] 
+runtimeclass VideoSink_VideoFrame_UIElement 
+{
+  VideoSink_VideoFrame_UIElement(Windows.UI.Xaml.UIElement canvas);
 };
 
 [default_interface]
@@ -285,6 +292,7 @@ delegate void PeerConnectionObserverOnIceGatheringChangeDelegate(Microsoft.WinRT
 delegate void PeerConnectionObserverOnRenegotiationNeededDelegate();
 delegate void PeerConnectionObserverOnSignalingChangeDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.PeerConnectionSignalingState value);
 delegate void PeerConnectionObserverOnTrackDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.RtpTransceiver value);
+delegate void PeerConnectionObserverOnDataChannelDelegate(Microsoft.WinRTC.WebRtcWrapper.webrtc.DataChannel value);
 delegate void SetSessionDescriptionObserverOnSuccessDelegate();
 delegate void SetSessionDescriptionObserverOnFailureDelegate(String error_message);
 
@@ -350,6 +358,7 @@ runtimeclass IceServer
 
 runtimeclass PeerConnection
 {
+  PeerConnection();
   Boolean AddIceCandidate(Microsoft.WinRTC.WebRtcWrapper.webrtc.IceCandidate value);
   void SetLocalDescription(Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription desc);
   void SetRemoteDescription(Microsoft.WinRTC.WebRtcWrapper.webrtc.SetSessionDescriptionObserver observer, Microsoft.WinRTC.WebRtcWrapper.webrtc.SessionDescription desc);
@@ -376,6 +385,8 @@ runtimeclass RTCOfferAnswerOptions
 {
   RTCOfferAnswerOptions();
   Boolean VoiceActivityDetection;
+  Boolean OfferToReceiveVideo;
+  Boolean OfferToReceiveAudio;
   Boolean IceRestart;
   Boolean UseRtpMux;
   Boolean RawPacketizationForVideo;

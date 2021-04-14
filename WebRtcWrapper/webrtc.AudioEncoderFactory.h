@@ -9,6 +9,7 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 
 struct AudioEncoderFactory : AudioEncoderFactoryT<AudioEncoderFactory>
 {
+  AudioEncoderFactory() = default;
   AudioEncoderFactory(::rtc::scoped_refptr<::webrtc::AudioEncoderFactory> webrtc_audio_encoder_factory);
 
   ::webrtc::AudioEncoderFactory *get_webrtc_audio_encoder_factory_no_ref() const;
@@ -17,3 +18,10 @@ private:
   ::rtc::scoped_refptr<::webrtc::AudioEncoderFactory> webrtc_audio_encoder_factory_;
 };
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
+
+namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
+{
+struct AudioEncoderFactory : AudioEncoderFactoryT<AudioEncoderFactory, implementation::AudioEncoderFactory>
+{
+};
+} // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation

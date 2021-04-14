@@ -30,16 +30,34 @@ IceCandidate::SdpMid()
   return to_hstring(webrtc_ice_candidate_->sdp_mid());
 }
 
+void
+IceCandidate::SdpMid(hstring const &value)
+{
+  webrtc_ice_candidate_->sdp_mid();
+}
+
 int32_t
 IceCandidate::SdpMlineIndex()
 {
   return webrtc_ice_candidate_->sdp_mline_index();
 }
 
+void
+IceCandidate::SdpMlineIndex(int16_t value)
+{
+  webrtc_ice_candidate_->sdp_mline_index();
+}
+
 hstring
 IceCandidate::ServerUrl()
 {
   return to_hstring(webrtc_ice_candidate_->server_url());
+}
+
+void
+IceCandidate::ServerUrl(hstring const &value)
+{
+  webrtc_ice_candidate_->server_url();
 }
 
 hstring
@@ -55,6 +73,13 @@ IceCandidate::ToString()
   {
     throw hresult_illegal_method_call();
   }
+}
+
+void
+IceCandidate::ToString(hstring const &value)
+{
+  std::string val = to_string(value);
+  webrtc_ice_candidate_->ToString(&val);
 }
 
 const ::webrtc::IceCandidateInterface *

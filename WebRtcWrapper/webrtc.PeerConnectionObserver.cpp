@@ -9,6 +9,7 @@
 
 #include "webrtc.IceCandidate.h"
 #include "webrtc.RtpTransceiver.h"
+#include "webrtc.datachannel.h"
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 {
@@ -77,6 +78,19 @@ PeerConnectionObserver::OnTrack(event_token const &token) noexcept
   on_track_event_.remove(token);
 }
 
+event_token
+PeerConnectionObserver::OnDataChannel(
+    Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnectionObserverOnDataChannelDelegate const &handler)
+{
+  return on_data_channel_event_.add(handler);
+}
+
+void
+PeerConnectionObserver::OnDataChannel(event_token const &token) noexcept
+{
+  on_data_channel_event_.remove(token);
+}
+
 void
 PeerConnectionObserver::OnSignalingChange(::webrtc::PeerConnectionInterface::SignalingState webrtc_new_state)
 {
@@ -114,9 +128,10 @@ PeerConnectionObserver::OnSignalingChange(::webrtc::PeerConnectionInterface::Sig
   }
 }
 
-void PeerConnectionObserver::OnDataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> /*data_channel*/)
+void PeerConnectionObserver::OnDataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> data_channel)
 {
-  throw hresult_not_implemented(); // FIXME(aurighet)
+  auto winrtc_data_channel = make<DataChannel>(data_channel);
+  on_data_channel_event_(winrtc_data_channel);
 }
 
 void
@@ -170,5 +185,7 @@ PeerConnectionObserver::OnTrack(::rtc::scoped_refptr<::webrtc::RtpTransceiverInt
   auto winrtc_rtp_transceiver = make<RtpTransceiver>(transceiver);
   on_track_event_(winrtc_rtp_transceiver);
 }
+
+
 
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation

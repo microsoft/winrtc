@@ -12,9 +12,13 @@ struct IceCandidate : IceCandidateT<IceCandidate>
   ~IceCandidate();
 
   hstring SdpMid();
+  void SdpMid(hstring const &value);
   int32_t SdpMlineIndex();
+  void SdpMlineIndex(int16_t value);
   hstring ServerUrl();
+  void ServerUrl(hstring const &value);
   hstring ToString();
+  void ToString(hstring const &value);
 
   const ::webrtc::IceCandidateInterface *get_webrtc_ice_candidate() const;
 

@@ -1,0 +1,51 @@
+From 2a6a22af076a97b97e628296fcc30b1683c0f6e1 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Tue, 13 Apr 2021 13:19:37 -0700
+Subject: [PATCH 8/8] Fixing timing issues for the UWP build
+
+---
+ rtc_base/time_utils.cc          | 5 +++++
+ system_wrappers/source/clock.cc | 4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/rtc_base/time_utils.cc b/rtc_base/time_utils.cc
+index fe63d3a8ed..b9c223d577 100644
+--- a/rtc_base/time_utils.cc
++++ b/rtc_base/time_utils.cc
+@@ -16,6 +16,9 @@
+ 
+ #if defined(WEBRTC_WIN)
+ #include <sys/timeb.h>
++#if defined(WINUWP)
++#include "rtc_base/numerics/safe_conversions.h"
++#endif
+ #endif
+ 
+ #include "rtc_base/checks.h"
+@@ -23,6 +26,8 @@
+ #include "rtc_base/system_time.h"
+ #include "rtc_base/time_utils.h"
+ 
++
++
+ namespace rtc {
+ 
+ ClockInterface* g_clock = nullptr;
+diff --git a/system_wrappers/source/clock.cc b/system_wrappers/source/clock.cc
+index 8edffa6a05..c4827d96a8 100644
+--- a/system_wrappers/source/clock.cc
++++ b/system_wrappers/source/clock.cc
+@@ -98,8 +98,8 @@ class WinUwpRealTimeClock final : public RealTimeClock {
+     struct timeval tv;
+ 
+     tv.tv_sec = rtc::dchecked_cast<long>(nanos / 1000000000);
+-    tv.tv_usec = rtc::dchecked_cast<long>(nanos / 1000);
+-
++    tv.tv_usec = rtc::dchecked_cast<long>((nanos % 1000000000) / 1000);
++    
+     return tv;
+   }
+ };
+-- 
+2.26.2.windows.1
+

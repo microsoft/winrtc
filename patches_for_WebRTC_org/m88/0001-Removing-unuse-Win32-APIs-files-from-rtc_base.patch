@@ -1,0 +1,38 @@
+From c2ed331828bb074d3f03e4f1483dbe35bc182469 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Mon, 12 Apr 2021 16:10:48 -0700
+Subject: [PATCH] Removing unuse Win32 APIs files from rtc_base
+
+---
+ rtc_base/BUILD.gn | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
+index 32ef93e5c5..889968b2e2 100644
+--- a/rtc_base/BUILD.gn
++++ b/rtc_base/BUILD.gn
+@@ -878,13 +878,20 @@ if (is_win) {
+       "win32_window.cc",
+       "win32_window.h",
+     ]
+-
++  
+     deps = [
+       ":checks",
+       ":macromagic",
+       ":rtc_base_approved",
+     ]
+ 
++  if (current_os == "winuwp") {
++      sources -= [
++        "win32_window.cc",
++        "win32_window.h",
++      ]
++    }
++    
+     libs = [
+       "crypt32.lib",
+       "iphlpapi.lib",
+-- 
+2.26.2.windows.1
+

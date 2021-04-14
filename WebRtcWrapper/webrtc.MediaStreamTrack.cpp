@@ -8,6 +8,7 @@
 // clang-format on
 
 #include "webrtc.VideoSink_VideoFrame.h"
+#include "webrtc.VideoSink_VideoFrame_UIElement.h"
 #include "rtc.VideoSinkWants.h"
 
 namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
@@ -92,6 +93,17 @@ MediaStreamTrack::AddOrUpdateSink(Microsoft::WinRTC::WebRtcWrapper::webrtc::Vide
   static_cast<::webrtc::VideoTrackInterface *>(webrtc_media_stream_track_.get())
       ->AddOrUpdateSink(get_self<implementation::VideoSink_VideoFrame>(sink)->get_webrtc_video_sink_video_frame(),
                         *get_self<Microsoft::WinRTC::WebRtcWrapper::rtc::implementation::VideoSinkWants>(wants));
+}
+
+void
+MediaStreamTrack::AddOrUpdateSink_UIElement(
+    Microsoft::WinRTC::WebRtcWrapper::webrtc::VideoSink_VideoFrame_UIElement const &sink,
+    Microsoft::WinRTC::WebRtcWrapper::rtc::VideoSinkWants const &wants)
+
+{
+  static_cast<::webrtc::VideoTrackInterface *>(webrtc_media_stream_track_.get())
+      ->AddOrUpdateSink(get_self<implementation::VideoSink_VideoFrame_UIElement>(sink)->get_webrtc_video_sink_uielement_video_frame(),
+          *get_self<Microsoft::WinRTC::WebRtcWrapper::rtc::implementation::VideoSinkWants>(wants));
 }
 
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation

@@ -1,0 +1,86 @@
+From 544f350154a96802d56d4abb2e39aa302a96cad5 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Tue, 13 Apr 2021 10:24:14 -0700
+Subject: [PATCH 5/8] Adds the Media Foundation H264 encoder and decoder
+
+---
+ modules/video_coding/BUILD.gn | 44 ++++++++++++++++++++++++++++++-----
+ webrtc.gni                    |  4 ++++
+ 2 files changed, 42 insertions(+), 6 deletions(-)
+
+diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
+index 2a504363df..4da125d4dd 100644
+--- a/modules/video_coding/BUILD.gn
++++ b/modules/video_coding/BUILD.gn
+@@ -372,15 +372,47 @@ rtc_library("webrtc_h264") {
+   visibility = [ "*" ]
+   sources = [
+     "codecs/h264/h264.cc",
+-    "codecs/h264/h264_color_space.cc",
+-    "codecs/h264/h264_color_space.h",
+-    "codecs/h264/h264_decoder_impl.cc",
+-    "codecs/h264/h264_decoder_impl.h",
+-    "codecs/h264/h264_encoder_impl.cc",
+-    "codecs/h264/h264_encoder_impl.h",
+     "codecs/h264/include/h264.h",
+   ]
+ 
++  if (rtc_use_h264) {
++    sources += [
++      "codecs/h264/h264_color_space.cc",
++      "codecs/h264/h264_color_space.h",
++      "codecs/h264/h264_decoder_impl.cc",
++      "codecs/h264/h264_decoder_impl.h",
++      "codecs/h264/h264_encoder_impl.cc",
++      "codecs/h264/h264_encoder_impl.h",
++    ]
++  }
++
++  if (rtc_win_use_mf_h264) {
++    sources += [
++      "codecs/h264/win/h264_mf_factory.cc",
++      "codecs/h264/win/h264_mf_factory.h",
++      "codecs/h264/win/utils/async.h",
++      "codecs/h264/win/utils/crit_sec.h",
++      "codecs/h264/win/utils/utils.h",
++      "codecs/h264/win/utils/sample_attribute_queue.h",
++      "codecs/h264/win/decoder/h264_decoder_mf_impl.cc",
++      "codecs/h264/win/decoder/h264_decoder_mf_impl.h",
++      "codecs/h264/win/encoder/h264_encoder_mf_impl.cc",
++      "codecs/h264/win/encoder/h264_encoder_mf_impl.h",
++      "codecs/h264/win/encoder/h264_media_sink.cc",
++      "codecs/h264/win/encoder/h264_media_sink.h",
++      "codecs/h264/win/encoder/h264_stream_sink.cc",
++      "codecs/h264/win/encoder/h264_stream_sink.h",
++      "codecs/h264/win/encoder/ih264_encoding_callback.h",
++    ]
++
++    libs = [
++      "mfreadwrite.lib",
++      "mfplat.lib",
++      "mfuuid.lib",
++    ]
++  }
++
++
+   defines = []
+   deps = [
+     ":video_codec_interface",
+diff --git a/webrtc.gni b/webrtc.gni
+index 342a8179d8..6ecc302dde 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -214,6 +214,10 @@ declare_args() {
+   #        Windows 10. It is ok to use this option with any API family
+   #        (desktop (Win32), app (Store), ...).
+   rtc_win_video_capture_winrt = false
++
++  # When is set to true, a H264 encoder using Windows Media Foundation
++  # will be included in the libwebrtc.lib
++  rtc_win_use_mf_h264 = false
+ }
+ 
+ if (!build_with_mozilla) {
+-- 
+2.26.2.windows.1
+

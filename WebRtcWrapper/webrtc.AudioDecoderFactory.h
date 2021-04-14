@@ -9,6 +9,7 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 
 struct AudioDecoderFactory : AudioDecoderFactoryT<AudioDecoderFactory>
 {
+  AudioDecoderFactory() = default;
   AudioDecoderFactory(::rtc::scoped_refptr<::webrtc::AudioDecoderFactory> audio_decoder_factory);
 
   ::webrtc::AudioDecoderFactory *get_webrtc_audio_decoder_factory_no_ref() const;
@@ -16,5 +17,13 @@ struct AudioDecoderFactory : AudioDecoderFactoryT<AudioDecoderFactory>
 private:
   ::rtc::scoped_refptr<::webrtc::AudioDecoderFactory> webrtc_audio_decoder_factory_;
 };
-} // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
+}
+
+namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
+{
+struct AudioDecoderFactory : AudioDecoderFactoryT<AudioDecoderFactory, implementation::AudioDecoderFactory>
+{
+};
+} // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::factory_implementation
+// namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::implementation
 

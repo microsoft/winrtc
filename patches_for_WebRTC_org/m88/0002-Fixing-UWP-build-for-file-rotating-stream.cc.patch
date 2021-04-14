@@ -1,0 +1,26 @@
+From dcb08409a32608a7440be002264348517e189874 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Mon, 12 Apr 2021 16:30:32 -0700
+Subject: [PATCH 2/2] Fixing UWP build for file rotating stream.cc
+
+---
+ rtc_base/file_rotating_stream.cc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/rtc_base/file_rotating_stream.cc b/rtc_base/file_rotating_stream.cc
+index 826e6745f3..8641b781fa 100644
+--- a/rtc_base/file_rotating_stream.cc
++++ b/rtc_base/file_rotating_stream.cc
+@@ -83,7 +83,8 @@ bool DeleteFile(const std::string& file) {
+ }
+ 
+ bool MoveFile(const std::string& old_file, const std::string& new_file) {
+-  return ::MoveFileW(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str()) != 0;
++  return ::MoveFileExW(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str(),
++                     MOVEFILE_WRITE_THROUGH) != 0;
+ }
+ 
+ bool IsFile(const std::string& file) {
+-- 
+2.26.2.windows.1
+

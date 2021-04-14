@@ -8,6 +8,11 @@ namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::imple
 {
 struct PeerConnection : PeerConnectionT<PeerConnection>
 {
+
+  PeerConnection();
+  ~PeerConnection();
+  //PeerConnection() = default;
+
   PeerConnection(::rtc::scoped_refptr<::webrtc::PeerConnectionInterface> webrtc_peer_connection);
 
   bool AddIceCandidate(Microsoft::WinRTC::WebRtcWrapper::webrtc::IceCandidate const &value);
@@ -38,3 +43,9 @@ private:
   ::rtc::scoped_refptr<::webrtc::PeerConnectionInterface> webrtc_peer_connection_;
 };
 } // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::implementation
+namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::factory_implementation
+{
+struct PeerConnection : PeerConnectionT<PeerConnection, implementation::PeerConnection>
+{
+};
+} // namespace winrt::Microsoft::WinRTC::WebRtcWrapper::webrtc::PeerConnection::factory_implementation

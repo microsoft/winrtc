@@ -1,0 +1,33 @@
+From daf96b8f61a4cb990ecb5fa098c0458063a89997 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Tue, 13 Apr 2021 11:58:53 -0700
+Subject: [PATCH 6/8] Disabling switch without case warning for aec3
+
+---
+ modules/audio_processing/aec3/fft_data.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/modules/audio_processing/aec3/fft_data.h b/modules/audio_processing/aec3/fft_data.h
+index 9c25e784aa..b11826cb07 100644
+--- a/modules/audio_processing/aec3/fft_data.h
++++ b/modules/audio_processing/aec3/fft_data.h
+@@ -47,6 +47,8 @@ struct FftData {
+   void Spectrum(Aec3Optimization optimization,
+                 rtc::ArrayView<float> power_spectrum) const {
+     RTC_DCHECK_EQ(kFftLengthBy2Plus1, power_spectrum.size());
++    #pragma warning(push)
++#pragma warning(disable:4065)
+     switch (optimization) {
+ #if defined(WEBRTC_ARCH_X86_FAMILY)
+       case Aec3Optimization::kSse2: {
+@@ -71,6 +73,7 @@ struct FftData {
+         std::transform(re.begin(), re.end(), im.begin(), power_spectrum.begin(),
+                        [](float a, float b) { return a * a + b * b; });
+     }
++#pragma warning(pop)
+   }
+ 
+   // Copy the data from an interleaved array.
+-- 
+2.26.2.windows.1
+

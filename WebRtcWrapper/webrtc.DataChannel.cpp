@@ -104,12 +104,7 @@ DataChannel::DataChannel(::rtc::scoped_refptr<::webrtc::DataChannelInterface> we
     {
       webrtc_data_channel_->Send(get_self<DataBuffer>(buffer)->get_webrtc_data_buffer());
 
-      //throw hresult_not_implemented();
-
-        //to_hstring(webrtc_data_channel_->Send(buffer));
-      /*webrtc_data_channel_->Send(buffer);
-      ::webrtc::DataBuffer data = buffer;*/
-      /* return to_hstring(Send_t(buffer));*/
+      return to_hstring(webrtc_data_channel_->Send(get_self<DataBuffer>(buffer)->get_webrtc_data_buffer()));
     }
     hstring
     DataChannel::Send_t(::webrtc::DataBuffer const &buffer)

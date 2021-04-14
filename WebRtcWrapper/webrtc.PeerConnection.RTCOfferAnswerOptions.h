@@ -15,6 +15,10 @@ struct RTCOfferAnswerOptions : RTCOfferAnswerOptionsT<RTCOfferAnswerOptions>,
   void VoiceActivityDetection(bool value);
   bool IceRestart();
   void IceRestart(bool value);
+  bool OfferToReceiveAudio();
+  void OfferToReceiveAudio(bool value);
+  bool OfferToReceiveVideo();
+  void OfferToReceiveVideo(bool value);
   bool UseRtpMux();
   void UseRtpMux(bool value);
   bool RawPacketizationForVideo();

@@ -141,6 +141,9 @@
     <ClCompile Include="webrtc.DataBuffer_Helper.cpp">
       <Filter>Wrappers</Filter>
     </ClCompile>
+    <ClCompile Include="webrtc.VideoSink_VideoFrame_UIElement.cpp">
+      <Filter>Wrappers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -265,6 +268,9 @@
       <Filter>Wrappers</Filter>
     </ClInclude>
     <ClInclude Include="webrtc.DataBuffer_Helper.h">
+      <Filter>Wrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.VideoSink_VideoFrame_UIElement.h">
       <Filter>Wrappers</Filter>
     </ClInclude>
   </ItemGroup>

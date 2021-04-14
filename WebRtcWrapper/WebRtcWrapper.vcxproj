@@ -152,6 +152,7 @@
     <ClInclude Include="webrtc.VideoCaptureFactory.h" />
     <ClInclude Include="webrtc.VideoCaptureModule.h" />
     <ClInclude Include="webrtc.VideoCaptureModule_DeviceInfo.h" />
+    <ClInclude Include="webrtc.VideoSink_VideoFrame_UIElement.h" />
     <ClInclude Include="webrtc.WebRTC.h" />
     <ClInclude Include="webrtc.MediaStreamTrack.h" />
     <ClInclude Include="webrtc.PeerConnection.IceServer.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="webrtc.VideoCaptureFactory.cpp" />
     <ClCompile Include="webrtc.VideoCaptureModule.cpp" />
     <ClCompile Include="webrtc.VideoCaptureModule_DeviceInfo.cpp" />
+    <ClCompile Include="webrtc.VideoSink_VideoFrame_UIElement.cpp" />
     <ClCompile Include="webrtc.WebRTC.cpp" />
     <ClCompile Include="webrtc.CreateSessionDescriptionObserver.cpp" />
     <ClCompile Include="webrtc.MediaStreamTrack.cpp" />

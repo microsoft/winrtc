@@ -1,0 +1,254 @@
+From 5b1d6a4ba83d24f002a5da7b91dde77e7c79464f Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Tue, 13 Apr 2021 10:13:21 -0700
+Subject: [PATCH 4/8] Enabling the new video capture module
+
+---
+ BUILD.gn                                      |  4 ++
+ modules/video_capture/BUILD.gn                | 70 +++++++++----------
+ modules/video_capture/video_capture_defines.h | 41 +++++++++--
+ .../windows/video_capture_factory_windows.cc  | 24 +++++--
+ webrtc.gni                                    | 12 ++--
+ 5 files changed, 98 insertions(+), 53 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index c0b47d5d11..fb486a05ba 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -257,6 +257,10 @@ config("common_config") {
+     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
+   }
+ 
++  if (rtc_win_video_capture_winrt) {
++    defines += [ "WEBRTC_VIDEO_CAPTURE_WINRT" ]
++  }
++
+   if (rtc_libvpx_build_vp9) {
+     defines += [ "RTC_ENABLE_VP9" ]
+   }
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index 3a5052dc7a..43d3c7c17b 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -63,47 +63,41 @@ if (!build_with_chromium) {
+       deps += [ "../../media:rtc_media_base" ]
+     }
+     if (is_win) {
+-      sources = [
+-        "windows/device_info_ds.cc",
+-        "windows/device_info_ds.h",
+-        "windows/help_functions_ds.cc",
+-        "windows/help_functions_ds.h",
+-        "windows/sink_filter_ds.cc",
+-        "windows/sink_filter_ds.h",
+-        "windows/video_capture_ds.cc",
+-        "windows/video_capture_ds.h",
+-        "windows/video_capture_factory_windows.cc",
+-      ]
+-
+-      libs = [
+-        "ole32.lib",
+-        "oleaut32.lib",
+-        "strmiids.lib",
+-        "user32.lib",
+-      ]
+-
+-      if (build_with_mozilla) {
+-        sources += [
+-          "windows/BaseFilter.cpp",
+-          "windows/BaseInputPin.cpp",
+-          "windows/BasePin.cpp",
+-          "windows/MediaType.cpp",
++      if (rtc_win_video_capture_winrt) {
++        sources = [
++          "windows/device_info_winrt.cc",
++          "windows/device_info_winrt.h",
++          "windows/help_functions_winrt.cc",
++          "windows/help_functions_winrt.h",
++          "windows/video_capture_winrt.cc",
++          "windows/video_capture_winrt.h",
+         ]
++        libs = [ "windowsapp.lib" ]
++      } else {
++        defines = [ "WEBRTC_VIDEO_CAPTURE_DSHOW" ]
++        sources = [
++          "windows/device_info_ds.cc",
++          "windows/device_info_ds.h",
++          "windows/help_functions_ds.cc",
++          "windows/help_functions_ds.h",
++          "windows/sink_filter_ds.cc",
++          "windows/sink_filter_ds.h",
++          "windows/video_capture_ds.cc",
++          "windows/video_capture_ds.h",
++         ]
++        libs = [ "strmiids.lib" ]
++        if (build_with_mozilla) {
++          sources += [
++            "windows/BaseFilter.cpp",
++            "windows/BaseInputPin.cpp",
++            "windows/BasePin.cpp",
++            "windows/MediaType.cpp",
++          ]
++        }
+       }
+-    }
+-
+-    if (build_with_mozilla && is_android) {
+-      include_dirs = [
+-        "/config/external/nspr",
+-        "/nsprpub/lib/ds",
+-        "/nsprpub/pr/include",
+-      ]
+-
+-      sources = [
+-        "android/device_info_android.cc",
+-        "android/video_capture_android.cc",
++      sources += [
++        "windows/video_capture_factory_windows.cc",
+       ]
+-    }
+   }
+ 
+   if (!is_android && rtc_include_tests) {
+diff --git a/modules/video_capture/video_capture_defines.h b/modules/video_capture/video_capture_defines.h
+index 63534600a9..375c723a5b 100644
+--- a/modules/video_capture/video_capture_defines.h
++++ b/modules/video_capture/video_capture_defines.h
+@@ -11,6 +11,10 @@
+ #ifndef MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+ #define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
+ 
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++#include <wrl/client.h>
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+ #include "api/video/video_frame.h"
+ #include "common_video/libyuv/include/webrtc_libyuv.h"
+ 
+@@ -29,13 +33,26 @@ struct VideoCaptureCapability {
+   VideoType videoType;
+   bool interlaced;
+ 
+-  VideoCaptureCapability() {
+-    width = 0;
+-    height = 0;
+-    maxFPS = 0;
+-    videoType = VideoType::kUnknown;
+-    interlaced = false;
+-  }
++  #if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  std::wstring profile_id;
++  ::Microsoft::WRL::ComPtr<::IUnknown> media_capture_video_profile;
++  ::Microsoft::WRL::ComPtr<::IUnknown> record_media_description;
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
++  VideoCaptureCapability()
++      : width(0),
++        height(0),
++        maxFPS(0),
++        videoType(VideoType::kUnknown),
++        interlaced(false)
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++        , profile_id(L"")
++        , media_capture_video_profile(nullptr)
++        , record_media_description(nullptr)
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++  {}
++
++  
+   bool operator!=(const VideoCaptureCapability& other) const {
+     if (width != other.width)
+       return true;
+@@ -47,6 +64,16 @@ struct VideoCaptureCapability {
+       return true;
+     if (interlaced != other.interlaced)
+       return true;
++    #if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++    if (profile_id != other.profile_id)
++      return true;
++    if (media_capture_video_profile.Get() !=
++        other.media_capture_video_profile.Get())
++      return true;
++    if (record_media_description.Get() != other.record_media_description.Get())
++      return true;
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++
+     return false;
+   }
+   bool operator==(const VideoCaptureCapability& other) const {
+diff --git a/modules/video_capture/windows/video_capture_factory_windows.cc b/modules/video_capture/windows/video_capture_factory_windows.cc
+index ea9d31add9..bdaeec0738 100644
+--- a/modules/video_capture/windows/video_capture_factory_windows.cc
++++ b/modules/video_capture/windows/video_capture_factory_windows.cc
+@@ -9,7 +9,14 @@
+  */
+ 
+ #include "api/scoped_refptr.h"
++
++#if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++#include "modules/video_capture/windows/device_info_winrt.h"
++#include "modules/video_capture/windows/video_capture_winrt.h"
++#else
+ #include "modules/video_capture/windows/video_capture_ds.h"
++#endif
++
+ #include "rtc_base/ref_counted_object.h"
+ 
+ namespace webrtc {
+@@ -18,7 +25,11 @@ namespace videocapturemodule {
+ // static
+ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
+   // TODO(tommi): Use the Media Foundation version on Vista and up.
+-  return DeviceInfoDS::Create();
++ #if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  return DeviceInfoWinRT::Create();
++#else
++   return DeviceInfoDS::Create();
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
+ }
+ 
+ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+@@ -26,9 +37,14 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+   if (device_id == nullptr)
+     return nullptr;
+ 
+-  // TODO(tommi): Use Media Foundation implementation for Vista and up.
+-  rtc::scoped_refptr<VideoCaptureDS> capture(
+-      new rtc::RefCountedObject<VideoCaptureDS>());
++  #if defined(WEBRTC_VIDEO_CAPTURE_WINRT)
++  rtc::scoped_refptr<VideoCaptureWinRT> capture(
++      new rtc::RefCountedObject<VideoCaptureWinRT>());
++#else
++   rtc::scoped_refptr<VideoCaptureDS> capture(
++       new rtc::RefCountedObject<VideoCaptureDS>());
++#endif  // WEBRTC_VIDEO_CAPTURE_WINRT
++   
+   if (capture->Init(device_id) != 0) {
+     return nullptr;
+   }
+diff --git a/webrtc.gni b/webrtc.gni
+index b70cba633a..342a8179d8 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -206,10 +206,14 @@ declare_args() {
+   # wide character functions.
+   rtc_win_undef_unicode = false
+ 
+-  # When set to true, a capturer implementation that uses the
+-  # Windows.Graphics.Capture APIs will be available for use. These APIs are
+-  # available in the Win 10 SDK v10.0.19041.
+-  rtc_enable_win_wgc = false
++  # Defines which API should be used by the video capture module on Windows.
++  # The following are the current options:
++  # False: It uses DirectShow APIs. DirectShow should be used on builds
++  #        that need to be compatible with old versions of Windows (Vista/7).
++  # True:  It uses the Windows::Media APIs. This option is recommended for
++  #        Windows 10. It is ok to use this option with any API family
++  #        (desktop (Win32), app (Store), ...).
++  rtc_win_video_capture_winrt = false
+ }
+ 
+ if (!build_with_mozilla) {
+-- 
+2.26.2.windows.1
+
