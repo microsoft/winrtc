@@ -64,10 +64,10 @@ set GYP_MSVS_VERSION=2019
 echo.
 echo Creating the folder where the code base will be placed...
 c:
-mkdir c:\webrtc
+mkdir c:\webrtc_m88
 if errorlevel 1 goto :error
 
-cd c:\webrtc
+cd c:\webrtc_m88
 if errorlevel 1 goto :error
 
 REM Downloading the bits
@@ -82,16 +82,16 @@ call fetch --nohooks webrtc
 if errorlevel 1 goto :error
 
 echo.
-echo Changing to the branch-heads/4147 branch...
+echo Changing to the branch-heads/4324 branch...
 cd src
 if errorlevel 1 goto :error
 
-call git checkout branch-heads/4147
+call git checkout branch-heads/4324
 if errorlevel 1 goto :error
 
 echo.
 echo Instructing the tools to bring the bits from all the sub repositories to your dev box...
-gclient sync -D -r branch-heads/4147
+gclient sync -D -r branch-heads/4324
 if errorlevel 1 goto :error
 
 goto :exit

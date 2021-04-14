@@ -10,7 +10,7 @@ environment:
 
 version:
   name: 'WinRTC'
-  major: 84
+  major: 88
   minor: 0
   system: 'patch'
   exclude_commit: true

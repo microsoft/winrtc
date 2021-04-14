@@ -6,7 +6,7 @@ set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 set GYP_MSVS_VERSION=2019
 set PATH=c:\depot_tools;%PATH%
 c:
-cd c:\webrtc\src
+cd c:\webrtc_m88\src
 if errorlevel 1 goto :error
 
 REM Setting the vs developer environment
@@ -93,31 +93,31 @@ echo Copying contents...
 cd /D "%~dp0"
 if errorlevel 1 goto :error
 
-call :copyFiles c:\webrtc\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
-call :copyFiles c:\webrtc\src\out\msvc\uwp\Release\arm64\obj\webrtc.lib ..\output\msvc\uwp\Release\arm64\obj\
-call :copyFiles c:\webrtc\src\out\msvc\uwp\Release\x86\obj\webrtc.lib ..\output\msvc\uwp\Release\x86\obj\
-call :copyFiles c:\webrtc\src\out\msvc\win32\Release\x64\obj\webrtc.lib ..\output\msvc\win32\Release\x64\obj\
-call :copyFiles c:\webrtc\src\out\msvc\win32\Release\arm64\obj\webrtc.lib ..\output\msvc\win32\Release\arm64\obj\
-call :copyFiles c:\webrtc\src\out\msvc\win32\Release\x86\obj\webrtc.lib ..\output\msvc\win32\Release\x86\obj\
-call :copyFiles c:\webrtc\src\api\*.h ..\include\api\
-call :copyFiles c:\webrtc\src\audio\*.h ..\include\audio\
-call :copyFiles c:\webrtc\src\base\*.h ..\include\base\
-call :copyFiles c:\webrtc\src\call\*.h ..\include\call\
-call :copyFiles c:\webrtc\src\common_audio\*.h ..\include\common_audio\
-call :copyFiles c:\webrtc\src\common_video\*.h ..\include\common_video\
-call :copyFiles c:\webrtc\src\logging\*.h ..\include\logging\
-call :copyFiles c:\webrtc\src\media\*.h ..\include\media\
-call :copyFiles c:\webrtc\src\modules\*.h ..\include\modules\
-call :copyFiles c:\webrtc\src\p2p\*.h ..\include\p2p\
-call :copyFiles c:\webrtc\src\pc\*.h ..\include\pc\
-call :copyFiles c:\webrtc\src\rtc_base\*.h ..\include\rtc_base\
-call :copyFiles c:\webrtc\src\rtc_tools\*.h ..\include\rtc_tools\
-call :copyFiles c:\webrtc\src\stats\*.h ..\include\stats\
-call :copyFiles c:\webrtc\src\system_wrappers\*.h ..\include\system_wrappers\
-call :copyFiles c:\webrtc\src\third_party\abseil-cpp\absl\*.h ..\include\absl\
-call :copyFiles c:\webrtc\src\third_party\libyuv\include\*.h ..\include\
-call :copyFiles c:\webrtc\src\video\*.h ..\include\video\
-call :copyFiles c:\webrtc\src\common_types.h ..\include\
+call :copyFiles c:\webrtc_m88\src\out\msvc\uwp\Release\x64\obj\webrtc.lib ..\output\msvc\uwp\Release\x64\obj\
+call :copyFiles c:\webrtc_m88\src\out\msvc\uwp\Release\arm64\obj\webrtc.lib ..\output\msvc\uwp\Release\arm64\obj\
+call :copyFiles c:\webrtc_m88\src\out\msvc\uwp\Release\x86\obj\webrtc.lib ..\output\msvc\uwp\Release\x86\obj\
+call :copyFiles c:\webrtc_m88\src\out\msvc\win32\Release\x64\obj\webrtc.lib ..\output\msvc\win32\Release\x64\obj\
+call :copyFiles c:\webrtc_m88\src\out\msvc\win32\Release\arm64\obj\webrtc.lib ..\output\msvc\win32\Release\arm64\obj\
+call :copyFiles c:\webrtc_m88\src\out\msvc\win32\Release\x86\obj\webrtc.lib ..\output\msvc\win32\Release\x86\obj\
+call :copyFiles c:\webrtc_m88\src\api\*.h ..\include\api\
+call :copyFiles c:\webrtc_m88\src\audio\*.h ..\include\audio\
+call :copyFiles c:\webrtc_m88\src\base\*.h ..\include\base\
+call :copyFiles c:\webrtc_m88\src\call\*.h ..\include\call\
+call :copyFiles c:\webrtc_m88\src\common_audio\*.h ..\include\common_audio\
+call :copyFiles c:\webrtc_m88\src\common_video\*.h ..\include\common_video\
+call :copyFiles c:\webrtc_m88\src\logging\*.h ..\include\logging\
+call :copyFiles c:\webrtc_m88\src\media\*.h ..\include\media\
+call :copyFiles c:\webrtc_m88\src\modules\*.h ..\include\modules\
+call :copyFiles c:\webrtc_m88\src\p2p\*.h ..\include\p2p\
+call :copyFiles c:\webrtc_m88\src\pc\*.h ..\include\pc\
+call :copyFiles c:\webrtc_m88\src\rtc_base\*.h ..\include\rtc_base\
+call :copyFiles c:\webrtc_m88\src\rtc_tools\*.h ..\include\rtc_tools\
+call :copyFiles c:\webrtc_m88\src\stats\*.h ..\include\stats\
+call :copyFiles c:\webrtc_m88\src\system_wrappers\*.h ..\include\system_wrappers\
+call :copyFiles c:\webrtc_m88\src\third_party\abseil-cpp\absl\*.h ..\include\absl\
+call :copyFiles c:\webrtc_m88\src\third_party\libyuv\include\*.h ..\include\
+call :copyFiles c:\webrtc_m88\src\video\*.h ..\include\video\
+call :copyFiles c:\webrtc_m88\src\common_types.h ..\include\
 
 goto :exit
 
