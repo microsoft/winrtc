@@ -1,0 +1,69 @@
+From 8bac3bf6caaf2287e061d13a045a4618a6f140c2 Mon Sep 17 00:00:00 2001
+From: Osahumen Aghasomwan <osaghaso@microsoft.com>
+Date: Fri, 16 Apr 2021 14:02:10 -0700
+Subject: [PATCH] Fixing the Video Capture
+
+---
+ modules/video_capture/BUILD.gn | 15 +++++++++++++++
+ rtc_base/BUILD.gn              | 12 ++++++------
+ 2 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
+index 43d3c7c17b..e0504c8597 100644
+--- a/modules/video_capture/BUILD.gn
++++ b/modules/video_capture/BUILD.gn
+@@ -99,6 +99,20 @@ if (!build_with_chromium) {
+         "windows/video_capture_factory_windows.cc",
+       ]
+   }
++  
++  if (build_with_mozilla && is_android) {
++      include_dirs = [
++        "/config/external/nspr",
++        "/nsprpub/lib/ds",
++        "/nsprpub/pr/include",
++      ]
++
++      sources = [
++        "android/device_info_android.cc",
++        "android/video_capture_android.cc",
++      ]
++    }
++  }
+ 
+   if (!is_android && rtc_include_tests) {
+     rtc_test("video_capture_tests") {
+@@ -136,6 +150,7 @@ if (!build_with_chromium) {
+         "//testing/gtest",
+         "//third_party/abseil-cpp/absl/memory",
+       ]
++      deps += [ "../../test:test_main" ]
+     }
+   }
+ }
+diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
+index 32ef93e5c5..b84c10850c 100644
+--- a/rtc_base/BUILD.gn
++++ b/rtc_base/BUILD.gn
+@@ -142,12 +142,12 @@ rtc_library("rtc_base_approved") {
+   }
+ 
+   # These files add a dependency on the Win10 SDK v10.0.10240.
+-  if (rtc_enable_win_wgc) {
+-    sources += [
+-      "win/create_direct3d_device.cc",
+-      "win/create_direct3d_device.h",
+-    ]
+-  }
++  #if (rtc_enable_win_wgc) {
++   # sources += [
++    #  "win/create_direct3d_device.cc",
++     # "win/create_direct3d_device.h",
++    #]
++  #}
+ 
+   if (is_nacl) {
+     public_deps +=  # no-presubmit-check TODO(webrtc:8603)
+-- 
+2.26.2.windows.1
+

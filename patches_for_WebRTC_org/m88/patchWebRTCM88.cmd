@@ -5,6 +5,8 @@ if not exist %WEBRTCM88_ROOT% ( goto :missingenv )
 set PATCH_DIR=%~dp0
 
 pushd %WEBRTCM88_ROOT%
+git.exe am "%PATCH_DIR%0001-Fixing-the-Video-Capture.patch"
+if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%0001-Removing-unuse-Win32-APIs-files-from-rtc_base.patch"
 if errorlevel 1 goto :error
 git.exe am "%PATCH_DIR%0002-Fixing-UWP-build-for-file-rotating-stream.cc.patch"

@@ -19,7 +19,7 @@ struct VideoRenderer : public ::rtc::VideoSinkInterface<::webrtc::VideoFrame>
   }
 
   winrt::Windows::Foundation::IAsyncAction
-  VideoRendererAsync(const winrt::Windows::UI::Xaml::UIElement &canvas)
+  VideoRendererAsync(const winrt::Windows::UI::Xaml::UIElement canvas)
   {
     co_await winrt::resume_foreground(_uiThread);
 
